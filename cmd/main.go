@@ -41,7 +41,7 @@ func main() {
         })
     })
 
-	if err := router.Run(":" + port); err != nil {
+	if err := router.Run("127.0.0.1:"+port); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}
 }
