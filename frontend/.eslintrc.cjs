@@ -12,6 +12,7 @@ module.exports = {
   settings: { react: { version: "18.2" } },
   plugins: ["react-refresh"],
   rules: {
+    "no-unused-vars": "off",
     quotes: [
       "error",
       "double",
