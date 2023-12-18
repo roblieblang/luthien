@@ -2,7 +2,12 @@ import { useEffect, useState } from "react";
 // import {BrowserRouter as Router, Routes, Route, Link } from "react-router-dom"
 import "./App.css";
 
-import { SpotifyLoginButton } from "./components/spotifyLoginButton";
+import { SpotifyLoginButton } from "./components/buttons/spotifyLoginButton";
+import { SpotifyLogoutButton } from "./components/buttons/spotifyLogoutButton";
+import {
+  getSpotifyAccessToken,
+  getSpotifyRefreshToken,
+} from "./utils/spotify-utils";
 
 function App() {
   const [count, setCount] = useState(0);
@@ -12,12 +17,21 @@ function App() {
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     let code = urlParams.get("code");
-    console.log(`Spotify auth token: ${code}`);
+
+    if (isAuthenticatedWithSpotify) {
+      getSpotifyRefreshToken();
+    }
 
     if (code) {
-      setIsAuthenticatedWithSpotify(!isAuthenticatedWithSpotify);
+      console.log(`Auth code: ${code}`);
+      getSpotifyAccessToken(code);
+      setIsAuthenticatedWithSpotify(true);
     }
   }, []);
+
+  let accessToken = localStorage.getItem("access_token");
+  let refreshToken = localStorage.getItem("refresh_token");
+  console.log(`Access: ${accessToken} \n Refresh: ${refreshToken}`);
 
   return (
     <div className="justify-center text-center">
@@ -35,7 +49,7 @@ function App() {
       {!isAuthenticatedWithSpotify ? (
         <SpotifyLoginButton />
       ) : (
-        <h1 className="text-green-500">You are authenticated with Spotify.</h1>
+        <SpotifyLogoutButton />
       )}
     </div>
   );

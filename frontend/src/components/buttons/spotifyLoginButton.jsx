@@ -2,20 +2,24 @@ import {
   base64encode,
   generateRandomString,
   sha256,
-} from "../utils/auth-utils";
+} from "../../utils/auth-utils";
 
 export const SpotifyLoginButton = () => {
+  // TODO: Refactor and move this function to ../../utils/auth-utils.js
   const handleLogin = async () => {
-    const hashedVerifier = await sha256(generateRandomString(64));
+    const codeVerifier = generateRandomString(64);
+    const hashedVerifier = await sha256(codeVerifier);
     const codeChallenge = base64encode(hashedVerifier);
 
-    window.localStorage.setItem("code_verifier", hashedVerifier);
+    // console.log(`Code challenge: ${codeChallenge}`);
 
     const spotifyClientId = import.meta.env.VITE_SPOTIFY_CLIENT_ID;
     const redirectUri = import.meta.env.VITE_REDIRECT_URI;
 
     const scope = "user-read-private user-read-email";
     const authUrl = new URL("https://accounts.spotify.com/authorize");
+
+    window.localStorage.setItem("code_verifier", codeVerifier);
 
     const params = {
       response_type: "code",
