@@ -21,9 +21,3 @@ export const base64encode = (input) => {
     .replace(/\//g, "_");
 };
 
-// TODO: Should have a logout button for each streaming service, and each service only i.e. don't clear() all of localStorage
-// Syntax for that would be: localStorage.removeItem(keyName)
-export async function logoutClick() {
-  localStorage.clear();
-  window.location.href = import.meta.env.VITE_REDIRECT_URI;
-}

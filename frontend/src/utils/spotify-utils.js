@@ -62,14 +62,19 @@ export const getSpotifyRefreshToken = async () => {
 };
 
 // Get the current user's Spotify profile
-export const getSpotifyProfile = async () => {
-  let accessToken = localStorage.getItem("access_token");
-
+export const getSpotifyProfile = async (accessToken) => {
   const response = await fetch("https://api.spotify.com/v1/me", {
     headers: {
-      Authorization: "Bearer " + accessToken,
+      Authorization: `Bearer ${accessToken}`,
     },
   });
 
   const data = await response.json();
 };
+
+// TODO: Should have a logout button for each streaming service, and each service only i.e. don't clear() all of localStorage
+// Syntax for that would be: localStorage.removeItem(keyName)
+export async function logoutClick() {
+  localStorage.clear();
+  window.location.href = import.meta.env.VITE_REDIRECT_URI;
+}

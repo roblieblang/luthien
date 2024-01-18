@@ -1,4 +1,4 @@
-import { logoutClick } from "../../utils/auth-utils";
+import { logoutClick } from "../../utils/spotify-utils";
 export const SpotifyLogoutButton = () => {
   return (
     <>

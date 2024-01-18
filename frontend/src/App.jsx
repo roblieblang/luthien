@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-// import {BrowserRouter as Router, Routes, Route, Link } from "react-router-dom"
+// import { Link, Route, BrowserRouter as Router, Routes } from "react-router-dom";
 import "./App.css";
 
 import { SpotifyLoginButton } from "./components/buttons/spotifyLoginButton";
@@ -18,20 +18,14 @@ function App() {
     const urlParams = new URLSearchParams(window.location.search);
     let code = urlParams.get("code");
 
-    if (isAuthenticatedWithSpotify) {
-      getSpotifyRefreshToken();
-    }
-
-    if (code) {
-      console.log(`Auth code: ${code}`);
-      getSpotifyAccessToken(code);
-      setIsAuthenticatedWithSpotify(true);
-    }
+    // if (code) {
+    //   fetch(`http://localhost:8080/callback?code=${code}`)
+    //   .then(response => response.json())
+    //   .then(data => {
+    //     // TODO: Handle access token, store it in memory or use it directly to make API calls
+    //   });
+    // }
   }, []);
-
-  let accessToken = localStorage.getItem("access_token");
-  let refreshToken = localStorage.getItem("refresh_token");
-  console.log(`Access: ${accessToken} \n Refresh: ${refreshToken}`);
 
   return (
     <div className="justify-center text-center">
