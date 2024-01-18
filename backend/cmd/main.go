@@ -1,39 +1,49 @@
 package main
 
 import (
-    "context"
-    "log"
-    "os"
-    "github.com/roblieblang/luthien-core-server/internal/db"
-    "github.com/gin-gonic/gin"
-    "github.com/joho/godotenv"
+	"context"
+	"log"
+
+	"github.com/gin-contrib/cors"
+	"github.com/gin-gonic/gin"
+	"github.com/roblieblang/luthien-core-server/internal/auth/spotify"
+	"github.com/roblieblang/luthien-core-server/internal/db"
+	"github.com/roblieblang/luthien-core-server/internal/utils"
 )
 
 func main() {
-    if err := godotenv.Load(); err != nil {
-        log.Print("No .env file found")
-    }
-    uri := os.Getenv("MONGO_URI")
+    // Load environment variables
+    envConfig := utils.LoadENV()
 
-	ctx, cancel := context.WithCancel(context.Background())
-    defer cancel()
 
-    client, err := db.Connect(uri, ctx)
-	if err != nil {
-		log.Fatalf("Failed to connect to database: %v", err)
-	}
-	defer client.Disconnect(ctx)
+    // Connect to MongoDB
+    mongoClient := db.Connect(envConfig.MongoURI)
+    defer func() {
+        if err := mongoClient.Disconnect(context.Background()); err != nil {
+            log.Fatalf("Failed to disconnect MongoDB client: %v", err)
+        }
+    }()
 
-	if err := client.Ping(ctx, nil); err != nil {
-		log.Fatalf("Failed to connect and ping database: %v", err)
-	}
 
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
-	}
-
+    // Create the router and assign routes
     router := gin.Default()
+
+    router.Use(cors.New(cors.Config{
+        AllowOrigins:     []string{"http://localhost:5173", "http://localhost:8080"},
+		AllowMethods:     []string{"GET", "POST"},
+		AllowHeaders:     []string{"Content-Type", "Authorization"},
+		AllowCredentials: true,
+    }))
+
+
+    router.GET("/auth/spotify/login", func(c *gin.Context) {
+        spotify.LoginHandler(c, envConfig.SpotifyClientID, envConfig.SpotifyRedirectURI)
+    })
+    router.GET("/auth/spotify/callback", func(c *gin.Context) {
+        spotify.CallbackHandler(c, envConfig.SpotifyClientID, envConfig.SpotifyRedirectURI)
+    })
+    // TODO: not sure if that's the right route...
+    router.GET("/auth/spotify", spotify.RefreshTokenHandler)
 
     router.GET("/", func(c *gin.Context) {
         c.JSON(200, gin.H{
@@ -41,7 +51,9 @@ func main() {
         })
     })
 
-	if err := router.Run("127.0.0.1:"+port); err != nil {
+
+    // Run the server
+	if err := router.Run("127.0.0.1:" + envConfig.Port); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}
 }

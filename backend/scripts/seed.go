@@ -3,37 +3,31 @@ package main
 import (
 	"context"
 	"log"
-	"os"
 	"time"
 
 	"github.com/brianvoe/gofakeit/v6"
-	"github.com/joho/godotenv"
 	"github.com/roblieblang/luthien-core-server/internal/db"
-	"github.com/roblieblang/luthien-core-server/internal/models"
+	"github.com/roblieblang/luthien-core-server/internal/user"
+	"github.com/roblieblang/luthien-core-server/internal/utils"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	// "go.mongodb.org/mongo-driver/mongo"
 )
 
 func main() {
-    if err := godotenv.Load(); err != nil {
-        log.Print("No .env file found")
-    }
+    envConfig := utils.LoadENV()
 
-    uri := os.Getenv("MONGO_URI")
-    databaseName := os.Getenv("MONGO_DB_NAME")
+    mongoClient := db.Connect(envConfig.MongoURI)
+    defer func() {
+        if err := mongoClient.Disconnect(context.Background()); err != nil {
+            log.Fatalf("Failed to disconnect MongoDB client: %v", err)
+        }
+    }()
 
-    ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-    defer cancel()
+	dropCtx, dropCancel := context.WithTimeout(context.Background(), 5*time.Second)
+    defer dropCancel()
 
-    client, err := db.Connect(uri, ctx)
-    if err != nil {
-        log.Fatalf("Failed to connect to database: %v", err)
-    }
-    defer client.Disconnect(ctx)
+    usersCollection := mongoClient.Database(envConfig.DatabaseName).Collection("users")
 
-    usersCollection := client.Database(databaseName).Collection("users")
-
-	if err := usersCollection.Drop(ctx); err != nil {
+	if err := usersCollection.Drop(dropCtx); err != nil {
 		log.Fatalf("Failed to drop users collection: %v", err)
 	}
 
@@ -42,7 +36,7 @@ func main() {
 
 	for i := 0; i < numUsers; i++ {
 		gofakeit.Seed(0)
-		users[i] = models.User {
+		users[i] = user.User {
 			ID:        primitive.NewObjectID(),
 			Username:  gofakeit.Username(),
 			Email:     gofakeit.Email(),
@@ -54,7 +48,7 @@ func main() {
 		}
 	}
 
-    _, err = usersCollection.InsertMany(ctx, users)
+    _, err := usersCollection.InsertMany(dropCtx, users)
     if err != nil {
         log.Fatalf("Failed to insert users: %v", err)
     }
