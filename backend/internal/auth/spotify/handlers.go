@@ -56,7 +56,7 @@ func CallbackHandler(c *gin.Context, clientID string, redirectURI string) {
     data.Set("code", code)
     data.Set("redirect_uri", redirectURI) 
     data.Set("client_id", clientID) 
-    data.Set("code_verifier", ) 
+    data.Set("code_verifier", "poo") // TODO: Change 
 
     resp, err := http.PostForm("https://accounts.spotify.com/api/token", data)
     if err != nil {

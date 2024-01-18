@@ -7,8 +7,10 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/roblieblang/luthien-core-server/internal/auth/spotify"
+    "github.com/roblieblang/luthien-core-server/internal/user"
 	"github.com/roblieblang/luthien-core-server/internal/db"
-	"github.com/roblieblang/luthien-core-server/internal/utils"
+    "github.com/roblieblang/luthien-core-server/internal/utils"
+
 )
 
 func main() {
@@ -34,6 +36,13 @@ func main() {
 		AllowHeaders:     []string{"Content-Type", "Authorization"},
 		AllowCredentials: true,
     }))
+
+    userDAO := user.NewDAO(mongoClient, envConfig.DatabaseName, "users")
+    userService := user.NewUserService(userDAO)
+    userHandler := user.NewUserHandler(userService)
+
+    router.POST("/users", userHandler.CreateUser)
+    router.GET("/users/:id", userHandler.GetUser)
 
 
     router.GET("/auth/spotify/login", func(c *gin.Context) {
