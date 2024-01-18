@@ -1,0 +1,3 @@
+We might not need to use migrations.
+
+If we decide that they're needed we can write custom migration scripts and/or a library.
