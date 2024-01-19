@@ -7,6 +7,9 @@ Playlist conversion tool for Spotify and Youtube. There and back again.
 - Docker
 - 
 
+## Running the Whole App
+- `docker-compose up --build` 
+
 ## Backend
 
 ### Getting Started
