@@ -19,3 +19,7 @@ func (us *UserService) CreateUser(user User) (*User, error) {
 func (us *UserService) GetUser(userID string) (*User, error) {
 	return us.userDAO.GetUser(userID)
 }
+
+func (us *UserService) GetAllUsers() ([]User, error) {
+	return us.userDAO.GetAllUsers()
+}

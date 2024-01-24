@@ -35,3 +35,24 @@ func (dao *DAO) GetUser(id string) (*User, error) {
 	}
 	return &user, nil
 }
+
+func (dao *DAO) GetAllUsers() ([]User,error) {
+	var users []User
+	cursor, err := dao.collection.Find(context.TODO(), bson.D{{}})
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(context.TODO())
+
+	for cursor.Next(context.TODO()) {
+		var user User
+		if err := cursor.Decode(&user); err != nil {
+			return nil, err
+		}
+		users = append(users, user)
+	}
+	if err := cursor.Err(); err != nil {
+		return nil, err
+	}
+	return users, nil
+}
