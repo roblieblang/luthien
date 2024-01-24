@@ -18,8 +18,10 @@ type EnvConfig struct {
 
 // Load the necessary ENV values
 func LoadENV() *EnvConfig {
-    if err := godotenv.Load(); err != nil {
-        log.Print("No .env file found")
+    if os.Getenv("MONGO_URI") == "" {
+        if err := godotenv.Load(); err != nil {
+            log.Print("No .env file found or environment variables not set in Docker")
+        }
     }
     return &EnvConfig{
         MongoURI:            os.Getenv("MONGO_URI"),
