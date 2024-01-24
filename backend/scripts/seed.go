@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"github.com/brianvoe/gofakeit/v6"
-	"github.com/roblieblang/luthien-core-server/internal/db"
-	"github.com/roblieblang/luthien-core-server/internal/user"
-	"github.com/roblieblang/luthien-core-server/internal/utils"
+	"github.com/roblieblang/luthien/backend/internal/db"
+	"github.com/roblieblang/luthien/backend/internal/user"
+	"github.com/roblieblang/luthien/backend/internal/utils"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -16,7 +16,8 @@ func main() {
     envConfig := utils.LoadENV()
 
     mongoClient := db.Connect(envConfig.MongoURI)
-    defer func() {
+
+	defer func() {
         if err := mongoClient.Disconnect(context.Background()); err != nil {
             log.Fatalf("Failed to disconnect MongoDB client: %v", err)
         }

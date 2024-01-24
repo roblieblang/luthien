@@ -6,17 +6,27 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	"github.com/roblieblang/luthien-core-server/internal/auth/spotify"
-    "github.com/roblieblang/luthien-core-server/internal/user"
-	"github.com/roblieblang/luthien-core-server/internal/db"
-    "github.com/roblieblang/luthien-core-server/internal/utils"
-
+    "github.com/redis/go-redis/v9"
+	"github.com/roblieblang/luthien/backend/internal/auth/spotify"
+	"github.com/roblieblang/luthien/backend/internal/db"
+	"github.com/roblieblang/luthien/backend/internal/user"
+	"github.com/roblieblang/luthien/backend/internal/utils"
 )
 
 func main() {
     // Load environment variables
     envConfig := utils.LoadENV()
 
+    // Connect to Redis
+    rdb := redis.NewClient(&redis.Options{
+        Addr: "redis:6379",
+        Password: "",
+        DB: 0,
+    })
+    _, err := rdb.Ping(context.Background()).Result()
+    if err != nil {
+        panic(err)
+    }
 
     // Connect to MongoDB
     mongoClient := db.Connect(envConfig.MongoURI)
@@ -31,7 +41,7 @@ func main() {
     router := gin.Default()
 
     router.Use(cors.New(cors.Config{
-        AllowOrigins:     []string{"http://localhost:5173", "http://localhost:8080"},
+        AllowOrigins:     []string{"http://localhost:8080", "http://localhost:5173"},
 		AllowMethods:     []string{"GET", "POST"},
 		AllowHeaders:     []string{"Content-Type", "Authorization"},
 		AllowCredentials: true,
@@ -42,6 +52,7 @@ func main() {
     userHandler := user.NewUserHandler(userService)
 
     router.POST("/users", userHandler.CreateUser)
+    router.GET("/users", userHandler.GetAllUsers)
     router.GET("/users/:id", userHandler.GetUser)
 
 
@@ -62,7 +73,7 @@ func main() {
 
 
     // Run the server
-	if err := router.Run("127.0.0.1:" + envConfig.Port); err != nil {
+	if err := router.Run(":" + envConfig.Port); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}
 }

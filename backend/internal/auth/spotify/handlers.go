@@ -6,12 +6,12 @@ import (
 	"net/url"
 
 	"github.com/gin-gonic/gin"
-	"github.com/roblieblang/luthien-core-server/internal/utils"
+	"github.com/roblieblang/luthien/backend/internal/utils"
 )
 
 // When hit, generates a code verifier and code challenge then redirects the user to Spotify auth URL
 func LoginHandler(c *gin.Context, clientID string, redirectURI string) {
-    // TODO: store code verifier in a session or some other secure place (REDIS!!!) redis redis (REDIS) redis
+    // TODO: store code verifier in a session or some other secure place (REDIS) 
     codeVerifier, err := utils.GenerateCodeVerifier(64)
     if err != nil {
         fmt.Printf("There was an issue generating the code verifier: %v", err)
@@ -64,8 +64,9 @@ func CallbackHandler(c *gin.Context, clientID string, redirectURI string) {
         return
     }
     defer resp.Body.Close()
-    // TODO: store code verifier in a session with Redis and retrieve it from there
-    //TODO: first dockerize the whole app so that you can run Redis outside of WSL (less config for all devs involved)
+    // TODO: first consider adding hot-reloading
+    // TODO: second dockerize the frontend
+    // TODO: third store code verifier in a session with Redis and retrieve it from there
 
 
     }
