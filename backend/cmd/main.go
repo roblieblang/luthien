@@ -6,7 +6,7 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-    "github.com/redis/go-redis/v9"
+	"github.com/redis/go-redis/v9"
 	"github.com/roblieblang/luthien/backend/internal/auth/spotify"
 	"github.com/roblieblang/luthien/backend/internal/db"
 	"github.com/roblieblang/luthien/backend/internal/user"
@@ -18,12 +18,12 @@ func main() {
     envConfig := utils.LoadENV()
 
     // Connect to Redis
-    rdb := redis.NewClient(&redis.Options{
-        Addr: "redis:6379",
+    redisClient := redis.NewClient(&redis.Options{
+        Addr: envConfig.RedisAddr,
         Password: "",
-        DB: 0,
+        DB: 0, 
     })
-    _, err := rdb.Ping(context.Background()).Result()
+    _, err := redisClient.Ping(context.Background()).Result()
     if err != nil {
         panic(err)
     }
@@ -57,13 +57,20 @@ func main() {
 
 
     router.GET("/auth/spotify/login", func(c *gin.Context) {
-        spotify.LoginHandler(c, envConfig.SpotifyClientID, envConfig.SpotifyRedirectURI)
+        spotify.LoginHandler(redisClient, c, envConfig.SpotifyClientID, envConfig.SpotifyRedirectURI)
     })
     router.GET("/auth/spotify/callback", func(c *gin.Context) {
-        spotify.CallbackHandler(c, envConfig.SpotifyClientID, envConfig.SpotifyRedirectURI)
+        spotify.CallbackHandler(redisClient, c, envConfig.SpotifyClientID, envConfig.SpotifyRedirectURI)
     })
-    // TODO: not sure if that's the right route...
-    router.GET("/auth/spotify", spotify.RefreshTokenHandler)
+    router.GET("/auth/spotify/refresh", func(c *gin.Context) {
+        spotify.RefreshTokenHandler(redisClient, c, envConfig.SpotifyClientID)
+    })
+    router.GET("/auth/spotify/check-auth", func(c *gin.Context) {
+        spotify.CheckAuthHandler(redisClient, c)
+    })
+    router.POST("/auth/spotify/logout", func(c * gin.Context) {
+        spotify.LogoutHandler(redisClient, c)
+    })
 
     router.GET("/", func(c *gin.Context) {
         c.JSON(200, gin.H{

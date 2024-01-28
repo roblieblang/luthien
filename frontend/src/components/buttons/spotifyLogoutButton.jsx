@@ -1,10 +1,19 @@
-import { logoutClick } from "../../utils/spotify-utils";
-export const SpotifyLogoutButton = () => {
+export const SpotifyLogoutButton = ({setIsAuthenticatedWithSpotify}) => {
+  const handleLogout = () => {
+    fetch("http://localhost:8080/auth/spotify/logout", { method: "POST" }).then(
+      (response) => {
+        if (response.ok) {
+          setIsAuthenticatedWithSpotify(false); // Callback to update the parent component's state
+        }
+      }
+    );
+  };
+
   return (
     <>
       <button
         className="bg-green-600 hover:bg-red-700 text-white font-bold py-2 px-4 my-5 rounded-full"
-        onClick={logoutClick}
+        onClick={handleLogout}
       >
         Logout of Spotify
       </button>
