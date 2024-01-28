@@ -1,21 +1,18 @@
 # Luthien
 
 ## Overview
-Playlist conversion tool for Spotify and Youtube. There and back again. 
+
+Playlist conversion tool for Spotify and Youtube. There and back again.
 
 ## Requirements
-- Docker
-- 
 
-## Running the Whole App
-- `docker-compose up --build` 
+- Docker
 
 ## Backend
 
-### Getting Started
-- Start the server from `./backend` directory with command `air` for hot reloading
+1. Run `docker-compose up --build` from the root of `./backend` to start Redis and MongoDB
+2. Start the server from `./backend` with command `air` for live reloading
 
 ## Frontend
-- Start the dev server from `./frontend` directory with command `npm run dev`
 
-### Getting Started
+1. Start the dev server from `./frontend` directory with command `npm run dev`
