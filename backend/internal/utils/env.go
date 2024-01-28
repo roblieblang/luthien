@@ -8,12 +8,13 @@ import (
 )
 
 type EnvConfig struct {
+    RedisAddr           string
     MongoURI            string
     Port                string
     DatabaseName        string
     SpotifyClientID     string
     SpotifyClientSecret string
-    SpotifyRedirectURI         string
+    SpotifyRedirectURI  string
 }
 
 // Load the necessary ENV values
@@ -24,6 +25,7 @@ func LoadENV() *EnvConfig {
         }
     }
     return &EnvConfig{
+        RedisAddr:           os.Getenv("REDIS_ADDR"),
         MongoURI:            os.Getenv("MONGO_URI"),
         Port:                defaultVal(os.Getenv("PORT"), "8080"),
         DatabaseName:        os.Getenv("MONGO_DB_NAME"),
