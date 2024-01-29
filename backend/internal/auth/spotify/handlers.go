@@ -194,7 +194,7 @@ func RefreshTokenHandler(redisClient *redis.Client, c *gin.Context, clientID str
 
 
 func CheckAuthHandler(redisClient *redis.Client, c *gin.Context) {
-    // TODO: Need a way to identify the current user
+    // TODO: Need a way to identify the current user. Auth0?
     // userID := getUserID(c)
     // TODO: this is a temporarily hardcoded user ID
     userID := "65a88a1599c5cf91244826fb"
