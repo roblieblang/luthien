@@ -1,4 +1,4 @@
-export const SpotifyLoginButton = () => {
+export const LoginButton = () => {
   // TODO: Refactor and move this function to ../../utils/auth-utils.js
   const handleLogin = () => {
     fetch("http://localhost:8080/auth/spotify/login")
@@ -8,10 +8,10 @@ export const SpotifyLoginButton = () => {
 
   return (
     <button
-      className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 my-5 rounded-full"
+      className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 my-5 rounded-full border-2 border-black"
       onClick={handleLogin}
     >
-      Login to Spotify
+      Connect Spotify Account
     </button>
   );
 };
