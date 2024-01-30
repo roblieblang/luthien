@@ -8,13 +8,16 @@ import (
 )
 
 type EnvConfig struct {
-    RedisAddr           string
-    MongoURI            string
-    Port                string
-    DatabaseName        string
-    SpotifyClientID     string
-    SpotifyClientSecret string
-    SpotifyRedirectURI  string
+    RedisAddr                   string
+    MongoURI                    string
+    Port                        string
+    DatabaseName                string
+    SpotifyClientID             string
+    SpotifyClientSecret         string
+    SpotifyRedirectURI          string
+    Auth0ManagementClientID     string
+    Auth0ManagementClientSecret string
+    Auth0Domain                 string
 }
 
 // Load the necessary ENV values
@@ -25,13 +28,16 @@ func LoadENV() *EnvConfig {
         }
     }
     return &EnvConfig{
-        RedisAddr:           os.Getenv("REDIS_ADDR"),
-        MongoURI:            os.Getenv("MONGO_URI"),
-        Port:                defaultVal(os.Getenv("PORT"), "8080"),
-        DatabaseName:        os.Getenv("MONGO_DB_NAME"),
-        SpotifyClientID:     os.Getenv("SPOTIFY_CLIENT_ID"),
-        SpotifyClientSecret: os.Getenv("SPOTIFY_CLIENT_SECRET"),
-        SpotifyRedirectURI:  os.Getenv("SPOTIFY_REDIRECT_URI"),
+        RedisAddr:                      os.Getenv("REDIS_ADDR"),
+        MongoURI:                       os.Getenv("MONGO_URI"),
+        Port:                           defaultVal(os.Getenv("PORT"), "8080"),
+        DatabaseName:                   os.Getenv("MONGO_DB_NAME"),
+        SpotifyClientID:                os.Getenv("SPOTIFY_CLIENT_ID"),
+        SpotifyClientSecret:            os.Getenv("SPOTIFY_CLIENT_SECRET"),
+        SpotifyRedirectURI:             os.Getenv("SPOTIFY_REDIRECT_URI"),
+        Auth0ManagementClientID:        os.Getenv("AUTH0_MANAGEMENT_CLIENT_ID"),
+        Auth0ManagementClientSecret:    os.Getenv("AUTH0_MANAGEMENT_CLIENT_SECRET"),
+        Auth0Domain:                    os.Getenv("AUTH0_DOMAIN"),
     }
 }
 

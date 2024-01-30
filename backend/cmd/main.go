@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
 	"github.com/roblieblang/luthien/backend/internal/auth/spotify"
+    "github.com/roblieblang/luthien/backend/internal/auth/auth0"
 	"github.com/roblieblang/luthien/backend/internal/db"
 	"github.com/roblieblang/luthien/backend/internal/user"
 	"github.com/roblieblang/luthien/backend/internal/utils"
@@ -47,6 +48,7 @@ func main() {
 		AllowCredentials: true,
     }))
 
+    // Users
     userDAO := user.NewDAO(mongoClient, envConfig.DatabaseName, "users")
     userService := user.NewUserService(userDAO)
     userHandler := user.NewUserHandler(userService)
@@ -56,6 +58,7 @@ func main() {
     router.GET("/users/:id", userHandler.GetUser)
 
 
+    // Spotify
     router.GET("/auth/spotify/login", func(c *gin.Context) {
         spotify.LoginHandler(redisClient, c, envConfig.SpotifyClientID, envConfig.SpotifyRedirectURI)
     })
@@ -71,6 +74,13 @@ func main() {
     router.POST("/auth/spotify/logout", func(c * gin.Context) {
         spotify.LogoutHandler(redisClient, c)
     })
+
+
+    // Auth0
+    router.POST("/auth/auth0/management/token", func(c *gin.Context) {
+        auth0.GetManagementAPIAcessToken(redisClient, c)
+    })
+
 
     router.GET("/", func(c *gin.Context) {
         c.JSON(200, gin.H{
