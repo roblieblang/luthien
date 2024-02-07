@@ -23,5 +23,3 @@ ReactDOM.createRoot(document.getElementById("root")).render(
     </Auth0Provider>
   </React.StrictMode>
 );
-
-// TODO: consider removing Google SSO
