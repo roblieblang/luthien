@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/brianvoe/gofakeit/v6"
-	"github.com/roblieblang/luthien/backend/internal/db"
+	"github.com/roblieblang/luthien/backend/internal/config"
 	"github.com/roblieblang/luthien/backend/internal/user"
 	"github.com/roblieblang/luthien/backend/internal/utils"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -15,7 +15,7 @@ import (
 func main() {
     envConfig := utils.LoadENV()
 
-    mongoClient := db.Connect(envConfig.MongoURI)
+    mongoClient := config.DBConnect(envConfig.MongoURI)
 
 	defer func() {
         if err := mongoClient.Disconnect(context.Background()); err != nil {
@@ -49,10 +49,10 @@ func main() {
 		}
 	}
 
-    _, err := usersCollection.InsertMany(dropCtx, users)
+    res, err := usersCollection.InsertMany(dropCtx, users)
     if err != nil {
         log.Fatalf("Failed to insert users: %v", err)
     }
 
-    log.Println("Database seeded successfully")
+    log.Printf("Database seeded successfully: %v", res)
 }

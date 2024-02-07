@@ -6,39 +6,30 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	"github.com/redis/go-redis/v9"
 	"github.com/roblieblang/luthien/backend/internal/auth/spotify"
-    "github.com/roblieblang/luthien/backend/internal/auth/auth0"
-	"github.com/roblieblang/luthien/backend/internal/db"
+	"github.com/roblieblang/luthien/backend/internal/config"
 	"github.com/roblieblang/luthien/backend/internal/user"
 	"github.com/roblieblang/luthien/backend/internal/utils"
 )
 
 func main() {
-    // Load environment variables
     envConfig := utils.LoadENV()
 
-    // Connect to Redis
-    redisClient := redis.NewClient(&redis.Options{
-        Addr: envConfig.RedisAddr,
-        Password: "",
-        DB: 0, 
-    })
-    _, err := redisClient.Ping(context.Background()).Result()
-    if err != nil {
-        panic(err)
-    }
+    redisClient := config.NewRedisClient(envConfig.RedisAddr, "", 0)
 
-    // Connect to MongoDB
-    mongoClient := db.Connect(envConfig.MongoURI)
+    mongoClient:= config.DBConnect(envConfig.MongoURI)
     defer func() {
         if err := mongoClient.Disconnect(context.Background()); err != nil {
             log.Fatalf("Failed to disconnect MongoDB client: %v", err)
         }
     }()
 
+    appCtx := &utils.AppContext{
+        EnvConfig:   envConfig,
+        RedisClient: redisClient,
+        MongoClient: mongoClient,
+    }
 
-    // Create the router and assign routes
     router := gin.Default()
 
     router.Use(cors.New(cors.Config{
@@ -48,8 +39,9 @@ func main() {
 		AllowCredentials: true,
     }))
 
+
     // Users
-    userDAO := user.NewDAO(mongoClient, envConfig.DatabaseName, "users")
+    userDAO := user.NewDAO(appCtx.MongoClient, appCtx.EnvConfig.DatabaseName, "users")
     userService := user.NewUserService(userDAO)
     userHandler := user.NewUserHandler(userService)
 
@@ -60,25 +52,16 @@ func main() {
 
     // Spotify
     router.GET("/auth/spotify/login", func(c *gin.Context) {
-        spotify.LoginHandler(redisClient, c, envConfig.SpotifyClientID, envConfig.SpotifyRedirectURI)
+        spotify.LoginHandler(c, appCtx)
     })
-    router.GET("/auth/spotify/callback", func(c *gin.Context) {
-        spotify.CallbackHandler(redisClient, c, envConfig.SpotifyClientID, envConfig.SpotifyRedirectURI)
-    })
-    router.GET("/auth/spotify/refresh", func(c *gin.Context) {
-        spotify.RefreshTokenHandler(redisClient, c, envConfig.SpotifyClientID)
+    router.POST("/auth/spotify/callback", func(c *gin.Context) {
+        spotify.CallbackHandler(c, appCtx)
     })
     router.GET("/auth/spotify/check-auth", func(c *gin.Context) {
-        spotify.CheckAuthHandler(redisClient, c)
+        spotify.CheckAuthHandler(c, appCtx)
     })
     router.POST("/auth/spotify/logout", func(c * gin.Context) {
-        spotify.LogoutHandler(redisClient, c)
-    })
-
-
-    // Auth0
-    router.POST("/auth/auth0/management/token", func(c *gin.Context) {
-        auth0.GetManagementAPIAcessToken(redisClient, c)
+        spotify.LogoutHandler(c, appCtx)
     })
 
 

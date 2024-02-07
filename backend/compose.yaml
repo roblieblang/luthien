@@ -1,25 +1,4 @@
 services:
-  # server:
-  #   env_file:
-  #     - .env
-  #   build:
-  #     context: .
-  #     target: final
-  #     dockerfile: Dockerfile.dev
-  #   volumes:
-  #     - ./:/app
-  #   ports:
-  #     - ${PORT}:${PORT}
-  #   environment:
-  #     MONGO_URI: mongodb://mongo:27017/ # Don't use localhost for Docker
-  #     MONGO_DB_NAME: ${MONGO_DB_NAME}
-  #     PORT: ${PORT}
-  #     SPOTIFY_CLIENT_SECRET: ${SPOTIFY_CLIENT_SECRET}
-  #     SPOTIFY_CLIENT_ID: ${SPOTIFY_CLIENT_ID}
-  #     SPOTIFY_REDIRECT_URI: ${SPOTIFY_REDIRECT_URI}
-  #   depends_on:
-  #     - mongo
-  #     - redis
   mongo:
     image: mongo
     ports:

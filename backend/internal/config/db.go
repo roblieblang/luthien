@@ -1,4 +1,4 @@
-package db
+package config
 
 import (
 	"context"
@@ -10,18 +10,17 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 )
 
-func Connect(uri string) *mongo.Client {
+func DBConnect(uri string) *mongo.Client {
     ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
     defer cancel()
 
     client, err := mongo.Connect(ctx, options.Client().ApplyURI(uri))
     if err != nil {
-        log.Fatalf("Failed to connect to MongoDb: %v", err)
+        log.Printf("Failed to connect to MongoDb: %v", err)
     }
 
     if err := client.Ping(ctx, readpref.Primary()); err != nil {
-        log.Fatalf("Failed to ping MongoDb: %v", err)
+        log.Printf("Failed to ping MongoDb: %v", err)
     }
-
     return client
 }
