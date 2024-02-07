@@ -1,9 +1,18 @@
+import { useAuth0 } from "@auth0/auth0-react";
+
 export const LoginButton = () => {
-  // TODO: Refactor and move this function to ../../utils/auth-utils.js
+  const { isAuthenticated, user } = useAuth0();
+
   const handleLogin = () => {
-    fetch("http://localhost:8080/auth/spotify/login")
-      .then((response) => response.json())
-      .then((data) => (window.location = data.authURL));
+    if (isAuthenticated && user) {
+      sessionStorage.setItem("userID", user.sub);
+      fetch("http://localhost:8080/auth/spotify/login")
+        .then((response) => response.json())
+        .then((data) => {
+          sessionStorage.setItem("sessionID", data.sessionID);
+          window.location.href = data.authURL;
+        });
+    }
   };
 
   return (
