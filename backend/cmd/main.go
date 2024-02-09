@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/roblieblang/luthien/backend/internal/auth/auth0"
 	"github.com/roblieblang/luthien/backend/internal/auth/spotify"
 	"github.com/roblieblang/luthien/backend/internal/config"
 	"github.com/roblieblang/luthien/backend/internal/user"
@@ -49,28 +50,25 @@ func main() {
     router.GET("/users", userHandler.GetAllUsers)
     router.GET("/users/:id", userHandler.GetUser)
 
+    // Auth0
+    auth0Client := auth0.NewAuth0Client(appCtx)
+    auth0Service := auth0.NewAuth0Service(auth0Client, appCtx)
 
     // Spotify
-    router.GET("/auth/spotify/login", func(c *gin.Context) {
-        spotify.LoginHandler(c, appCtx)
-    })
-    router.POST("/auth/spotify/callback", func(c *gin.Context) {
-        spotify.CallbackHandler(c, appCtx)
-    })
-    router.GET("/auth/spotify/check-auth", func(c *gin.Context) {
-        spotify.CheckAuthHandler(c, appCtx)
-    })
-    router.POST("/auth/spotify/logout", func(c * gin.Context) {
-        spotify.LogoutHandler(c, appCtx)
-    })
+    spotifyClient := spotify.NewSpotifyClient(appCtx)
+    spotifyService := spotify.NewSpotifyService(spotifyClient, auth0Service, appCtx)
+    spotifyHandler := spotify.NewSpotifyHandler(spotifyService)
 
+    router.GET("/auth/spotify/login", spotifyHandler.LoginHandler)
+    router.POST("/auth/spotify/callback", spotifyHandler.CallbackHandler)
+    router.POST("/auth/spotify/logout", spotifyHandler.LogoutHandler)
+    router.GET("/auth/spotify/check-auth", spotifyHandler.CheckAuthHandler)
 
     router.GET("/", func(c *gin.Context) {
         c.JSON(200, gin.H{
             "message": "Welcome to the server!",
         })
     })
-
 
     // Run the server
 	if err := router.Run(":" + envConfig.Port); err != nil {

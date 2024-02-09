@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"context"
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
@@ -8,8 +9,6 @@ import (
 	"log"
 	"math/big"
 	"time"
-
-	"github.com/gin-gonic/gin"
 )
 
 // Returns a high-entropy random string which will be used as a code verifier after being hashed
@@ -42,8 +41,8 @@ func GenerateSessionID() string {
 }
 
 // Checks if the access token stored in Redis identified by `tokenName` argument has expired
-func IsAccessTokenExpired(c *gin.Context, appCtx *AppContext, tokenName string) (bool, error) {
-    accessTokenTTL, err := appCtx.RedisClient.TTL(c.Request.Context(), tokenName).Result()
+func IsAccessTokenExpired(appCtx *AppContext, tokenName string) (bool, error) {
+    accessTokenTTL, err := appCtx.RedisClient.TTL(context.Background(), tokenName).Result()
     if err != nil {
         log.Printf("There was an issue retrieving the access token time to live: %v\n", err)
         return true, err
