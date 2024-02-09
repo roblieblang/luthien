@@ -1,5 +1,6 @@
 import { useAuth0 } from "@auth0/auth0-react";
-import { Link } from "react-router-dom";
+import BackButton from "../components/general/buttons/backButton";
+import BasicHeading from "../components/general/headings/basicHeading";
 
 export default function Profile() {
   const { user, isAuthenticated, isLoading } = useAuth0();
@@ -9,8 +10,8 @@ export default function Profile() {
   }
 
   return (
-    <div className="flex flex-col items-center text-center justify-center my-5">
-      <h1>Profile Page</h1>
+    <div className="flex flex-col items-center text-center justify-center">
+      <BasicHeading text="Profile Page" />
       {isAuthenticated && (
         <div className="flex flex-col items-center text-center justify-center">
           <img src={user.picture} alt={user.name} />
@@ -18,9 +19,7 @@ export default function Profile() {
           <p>Email: {user.email}</p>
         </div>
       )}
-      <Link to="/" className="rounded-full bg-blue-600 px-3 py-1 hover:bg-blue-200 text-black my-5">
-        Back
-      </Link>
+      <BackButton linkTo="/" />
     </div>
   );
 }
