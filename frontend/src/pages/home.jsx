@@ -14,7 +14,6 @@ export default function Home() {
     useState(false);
   const { isAuthenticated, user } = useAuth0();
 
-  // TODO: detect when access token has expired and then call on backend refresh token endpoint(?)
   useEffect(() => {
     if (user) {
       fetch(`http://localhost:8080/auth/spotify/check-auth?userID=${user.sub}`)

@@ -63,6 +63,8 @@ func main() {
     router.POST("/auth/spotify/callback", spotifyHandler.CallbackHandler)
     router.POST("/auth/spotify/logout", spotifyHandler.LogoutHandler)
     router.GET("/auth/spotify/check-auth", spotifyHandler.CheckAuthHandler)
+    router.GET("/spotify/current-profile", spotifyHandler.GetCurrentUserProfileHandler)
+    router.GET("/spotify/current-user-playlists", spotifyHandler.GetCurrentUserPlaylistsHandler)
 
     router.GET("/", func(c *gin.Context) {
         c.JSON(200, gin.H{
@@ -70,7 +72,6 @@ func main() {
         })
     })
 
-    // Run the server
 	if err := router.Run(":" + envConfig.Port); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}

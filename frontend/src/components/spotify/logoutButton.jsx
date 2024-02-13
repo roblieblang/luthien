@@ -9,6 +9,7 @@ export const LogoutButton = ({ setIsAuthenticatedWithSpotify, userID }) => {
     }).then((response) => {
       if (response.ok) {
         setIsAuthenticatedWithSpotify(false); // Callback to update the parent component's state
+        window.location.reload(true); // Force the page to refresh upon logout in order to allow for seemless re-auth
       }
     });
   };

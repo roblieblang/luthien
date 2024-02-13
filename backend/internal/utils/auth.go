@@ -54,12 +54,12 @@ func IsAccessTokenExpired(appCtx *AppContext, tokenName string) (bool, error) {
     }
 
     if accessTokenTTL == -2 {
-        log.Printf("Access token key does not exist\n")
+        log.Printf("Token key does not exist\n")
         return true, nil
     }
 
     if accessTokenTTL == -1 {
-        log.Printf("Access token does not have an expiry set\n")
+        log.Printf("Token does not have an expiry set\n")
         return false, nil
     }
     
