@@ -1,5 +1,5 @@
 import { useAuth0 } from "@auth0/auth0-react";
-import BackButton from "../components/general/buttons/backButton";
+import LinkButton from "../components/general/buttons/linkButton";
 import BasicHeading from "../components/general/headings/basicHeading";
 
 export default function Profile() {
@@ -19,7 +19,7 @@ export default function Profile() {
           <p>Email: {user.email}</p>
         </div>
       )}
-      <BackButton linkTo="/" />
+      <LinkButton to="/" text="Back" />
     </div>
   );
 }
