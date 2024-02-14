@@ -31,19 +31,23 @@ export default function Home() {
       <BasicHeading text="Home Page" />
       {isAuthenticated && (
         <>
-          <Link
-            className="rounded-md bg-yellow-400 mt-2 border-4 border-black hover:bg-yellow-600"
-            to="/profile"
-          >
-            <IoMdPerson size={35} />
-          </Link>
-          <Link
-            className="rounded-md bg-yellow-400 mt-2 border-4 border-black hover:bg-yellow-600"
-            to="/music"
-          >
-            <MdLibraryMusic size={35} />
-          </Link>
-          {!isAuthenticatedWithSpotify ? (
+          <div className="flex flex-row space-x-2">
+            <Link
+              className="rounded-md bg-yellow-400 border-4 border-black hover:bg-yellow-600"
+              to="/profile"
+            >
+              <IoMdPerson size={35} />
+            </Link>
+            {isAuthenticatedWithSpotify && (
+              <Link
+                className="rounded-md bg-yellow-400 border-4 border-black hover:bg-yellow-600"
+                to="/music"
+              >
+                <MdLibraryMusic size={35} />
+              </Link>
+            )}
+          </div>
+          {!isAuthenticatedWithSpotify ? ( // or YouTube
             <LoginButton />
           ) : (
             <LogoutButton

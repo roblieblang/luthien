@@ -1,5 +1,5 @@
 import { useAuth0 } from "@auth0/auth0-react";
-// TODO: merge with Spotify logoutButton
+// TODO: merge with Spotify logoutButton(?)
 export const LoginButton = () => {
   const { isAuthenticated, user } = useAuth0();
 

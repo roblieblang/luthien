@@ -194,3 +194,20 @@ func(h *SpotifyHandler) GetPlaylistTracksHandler(c *gin.Context) {
 
     c.JSON(http.StatusOK, playlistTracks)
 }
+
+// Handles the creation of a new playlist 
+func(h *SpotifyHandler) CreatePlaylistHandler(c *gin.Context) {
+    var playlistData CreatePlaylistBody
+    if err := c.BindJSON(&playlistData); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
+        return
+    }
+
+    _, err := h.spotifyService.CreatePlaylist(playlistData.UserID, playlistData.SpotifyUserID, playlistData.Payload)
+    if err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "error creating playlist"})
+        return
+    }
+
+    c.JSON(http.StatusOK, gin.H{"message": "Successfully created new playlist"})
+}

@@ -48,7 +48,7 @@ func (s *SpotifyService) StartLoginFlow() (string, string, error) {
     codeChallenge := utils.SHA256Hash(codeVerifier)
 
     // Request user authorization
-    scope := "user-read-private user-read-email playlist-read-private playlist-read-collaborative"
+    scope := "user-read-private user-read-email playlist-read-private playlist-read-collaborative playlist-modify-public playlist-modify-private"
     params := url.Values{}
     params.Add("client_id", s.AppContext.EnvConfig.SpotifyClientID)
     params.Add("response_type", "code")
@@ -261,4 +261,13 @@ func (s *SpotifyService) GetPlaylistTracks(userID, playlistID string, limit, off
         return SpotifyPlaylistTracksResponse{}, err
     }
     return s.SpotifyClient.GetPlaylistTracks(accessToken, playlistID, limit, offset)
+}
+
+// Wrapper service function for CreatePlaylist client function
+func (s *SpotifyService) CreatePlaylist(userID, spotifyUserID string, payload CreatePlaylistPayload) ([]byte, error) {
+    accessToken, err := s.getValidAccessToken(userID)
+    if err != nil {
+        return nil, err
+    }
+    return s.SpotifyClient.CreatePlaylist(accessToken, spotifyUserID, payload)
 }

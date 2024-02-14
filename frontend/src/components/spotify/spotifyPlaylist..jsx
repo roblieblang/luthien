@@ -1,9 +1,15 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useUser } from "../../contexts/userContext";
 import LinkButton from "../general/buttons/linkButton";
 import TrackList from "../trackList";
 
 export default function SpotifyPlaylist({ playlist }) {
   const [showTracks, setShowTracks] = useState(false);
+  const { userID, spotifyUserID } = useUser();
+
+  useEffect(() => {
+    console.log(`\nSpotify UID: ${spotifyUserID}\nApp UID: ${userID}`);
+  }, [userID, spotifyUserID]);
 
   const toggleTracks = () => {
     setShowTracks(!showTracks);
@@ -30,13 +36,17 @@ export default function SpotifyPlaylist({ playlist }) {
           text="Open in Spotify"
         />
         {/* TODO: these probably shouldn't be LinkButtons */}
-        <LinkButton
-          to=""
-          text={showTracks ? "Hide Tracks" : "View Tracks"}
-          onClick={toggleTracks}
-        />
+        {playlist.tracks.total > 0 && (
+          <>
+            <LinkButton
+              to=""
+              text={showTracks ? "Hide Tracks" : "View Tracks"}
+              onClick={toggleTracks}
+            />
+            <LinkButton to="" text="Convert" />
+          </>
+        )}
         {showTracks && <TrackList playlistID={playlist.id} />}
-        <LinkButton to="" text="Convert" />
       </div>
     </div>
   );

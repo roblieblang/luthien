@@ -66,6 +66,7 @@ func main() {
     router.GET("/spotify/current-profile", spotifyHandler.GetCurrentUserProfileHandler)
     router.GET("/spotify/current-user-playlists", spotifyHandler.GetCurrentUserPlaylistsHandler)
     router.GET("/spotify/playlist-tracks", spotifyHandler.GetPlaylistTracksHandler)
+    router.POST("/spotify/create-playlist", spotifyHandler.CreatePlaylistHandler)
 
     router.GET("/", func(c *gin.Context) {
         c.JSON(200, gin.H{
@@ -76,4 +77,5 @@ func main() {
 	if err := router.Run(":" + envConfig.Port); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}
+    // TODO: make sure serving over HTTPS in prod
 }

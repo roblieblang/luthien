@@ -3,9 +3,8 @@ import { useUser } from "../../contexts/userContext";
 import SpotifyUserPlaylists from "./spotifyUserPlaylists";
 
 export default function SpotifyUserProfile() {
+  const { userID, updateSpotifyUserID } = useUser();
   const [profile, setProfile] = useState(null);
-
-  const { userID } = useUser();
 
   useEffect(() => {
     if (userID) {
@@ -18,12 +17,13 @@ export default function SpotifyUserProfile() {
         })
         .then((data) => {
           setProfile(data);
+          updateSpotifyUserID(data.id);
         })
         .catch((error) => {
           console.error("Error fetching user profile:", error);
         });
     }
-  }, [userID]);
+  }, [userID, updateSpotifyUserID]);
 
   if (!profile) {
     return <div>Loading...</div>;

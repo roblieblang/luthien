@@ -1,6 +1,7 @@
 package spotify
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -120,8 +121,8 @@ type TrackDetails struct {
 }
 
 type AlbumDetails struct {
-    Name string `json:"name"`
-    Images      []Image        `json:"images"`
+    Name        string  `json:"name"`
+    Images      []Image `json:"images"`
 }
 
 type Artist struct {
@@ -130,6 +131,27 @@ type Artist struct {
 
 type ExternalIDs struct {
     ISRC string `json:"isrc"`
+}
+
+type CreatePlaylistBody struct {
+    UserID        string                `json:"userId"`
+    SpotifyUserID string                `json:"spotifyUserId"`
+    Payload       CreatePlaylistPayload `json:"payload"`
+}
+
+type CreatePlaylistPayload struct {
+    Name          string `json:"name"`
+    Public        *bool  `json:"public,omitempty"`  // Spotify's API defaults this to true
+    Collaborative *bool  `json:"collaborative,omitempty"`  // Defaults to false, to be true public must be false
+    Description   string `json:"description,omitempty"`
+}
+
+type SpotifySearchResponse struct {
+    Tracks struct {
+        Items []struct {
+            URI string `json:"uri"`
+        } `json:"items"`
+    } `json:"tracks"`
 }
 
 // Returns a new SpotifyClient struct 
@@ -273,7 +295,64 @@ func (c *SpotifyClient) GetPlaylistTracks(accessToken, playlistID string, limit,
     return playlistTracks, nil
 }
 
-// TODO: Implement Create playlist
+// Creates a new playlist
+func (c *SpotifyClient) CreatePlaylist(accessToken, spotifyUserID string, playlistPayload CreatePlaylistPayload) ([]byte, error) {
+    url := fmt.Sprintf("https://api.spotify.com/v1/users/%s/playlists", spotifyUserID)
+    
+    payload, err := json.Marshal(playlistPayload)
+    if err != nil {
+        // TODO: standardize error handling across the application
+        return nil, fmt.Errorf("error marshaling payload: %w", err)
+	}
+    
+    req, err := http.NewRequest("POST", url, bytes.NewBuffer(payload))
+	if err != nil {
+        return nil, fmt.Errorf("error creating request: %w", err)
+    }
 
-// TODO: Implement Update playlist(?) 
+    req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", accessToken))
+    req.Header.Add("Content-Type", "application/json")
+
+    res, err := http.DefaultClient.Do(req)
+    if err != nil {
+        return nil, fmt.Errorf("error executing request: %w", err)
+    }
+    defer res.Body.Close()
+
+    body, err := io.ReadAll(res.Body)
+    if err != nil {
+        return nil, fmt.Errorf("error reading response body: %w", err)
+    }
+
+    if res.StatusCode >= 400 {
+        return nil, fmt.Errorf("spotify API error (status code %d): %s", res.StatusCode, string(body))
+    }
+    
+    return body, nil
+}
+
+/* YOUTUBE TO SPOTIFY CONVERSION FLOW */
+// 1. Get ISRC of all items in YouTube playlist (or similar identifier, maybe just combination of artist, album, title)
+// 2. Use ISRC of each playlist item to find the equivalent item on Spotify and get its Spotify URI
+//    using GetURIWithISRC
+// 3. Assemble all URIs for the playlist-in-conversion into an array of strings
+// 4. Create a new Spotify playlist for the conversion
+// 5. Pass the URI array into the body of an AddItemsToPlaylist request
+
+// TODO: implement
+// Docs: https://developer.spotify.com/documentation/web-api/reference/search
+// Searches for a specific Spotify track using an ISRC 
+// (will we need a fallback? e.g. combination of artist, album, track, year)
+func (c *SpotifyClient) GetURIWithISRC(accessToken, isrc string) (SpotifySearchResponse, error) {    
+    return SpotifySearchResponse{}, nil
+}
+
+// TODO: implement 
+// Docs: https://developer.spotify.com/documentation/web-api/reference/add-tracks-to-playlist
+// Adds items to an existing Spotify playlist
+func (c *SpotifyClient) AddItemsToPlaylist(accessToken, playlistID string) error {
+    return nil
+}
+
+// TODO: Implement Update Playlist(?) 
 

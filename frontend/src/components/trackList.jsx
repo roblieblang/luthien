@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useUser } from "../contexts/userContext";
 
 const Track = () => {
-  /* TODO: Implement */
+  /* TODO: Implement for better modularity as styling improves */
 };
 
 export default function TrackList({ playlistID }) {
@@ -33,9 +33,10 @@ export default function TrackList({ playlistID }) {
     }
   }, [playlistID, userID]);
 
-  if (tracks === null || tracks.length === 0) {
+  if (tracks === null) {
     return <div>Loading tracks...</div>;
-  }
+  } 
+
   return (
     <ul>
       {tracks.map((trackItem, index) => (

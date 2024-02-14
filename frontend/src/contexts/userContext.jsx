@@ -8,6 +8,11 @@ export const useUser = () => useContext(UserContext);
 export const UserProvider = ({ children }) => {
   const { isAuthenticated, user } = useAuth0();
   const [userID, setUserID] = useState(null);
+  const [spotifyUserID, setSpotifyUserID] = useState(null);
+
+  const updateSpotifyUserID = (spotifyUserID) => {
+    setSpotifyUserID(spotifyUserID);
+  };
 
   useEffect(() => {
     if (isAuthenticated && user) {
@@ -18,6 +23,10 @@ export const UserProvider = ({ children }) => {
   }, [isAuthenticated, user]);
 
   return (
-    <UserContext.Provider value={{ userID }}>{children}</UserContext.Provider>
+    <UserContext.Provider
+      value={{ userID, spotifyUserID, updateSpotifyUserID,  }}
+    >
+      {children}
+    </UserContext.Provider>
   );
 };
