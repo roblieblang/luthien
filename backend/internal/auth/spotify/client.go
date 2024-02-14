@@ -103,9 +103,9 @@ type PlaylistTracks struct {
 }
 
 type SpotifyPlaylistTracksResponse struct {
-    Items  []PlaylistTrackItem `json:"items"`
     Limit  int                 `json:"limit"`
     Offset int                 `json:"offset"`
+    Items  []PlaylistTrackItem `json:"items"`
 }
 
 type PlaylistTrackItem struct {
@@ -225,12 +225,11 @@ func (c *SpotifyClient) GetCurrentUserPlaylists(accessToken string, limit, offse
 // Builds a URL with necessary fields and params for Spotify's Get Playlist Items endpoint
 func (c *SpotifyClient) buildPlaylistItemsURL(playlistID string, limit, offset int) string {
     baseURL := fmt.Sprintf("https://api.spotify.com/v1/playlists/%s/tracks", playlistID)
-    fields := "limit, offset, items(track(external_ids(isrc), name, artists(name), album(name, images)))"
 
-    encodedFields:= url.QueryEscape(fields)
+    // If you end up needing the fields param:
+    // items(track(name,external_ids.isrc,artists(name),album(name,images))),limit,offset
 
     params := url.Values{}
-    params.Add("fields", encodedFields)
     params.Add("limit", fmt.Sprintf("%d", limit))
 	params.Add("offset", fmt.Sprintf("%d", offset))
 
