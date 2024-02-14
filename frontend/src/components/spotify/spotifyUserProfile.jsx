@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
+import { useUser } from "../../contexts/userContext";
 import SpotifyUserPlaylists from "./spotifyUserPlaylists";
 
 export default function SpotifyUserProfile() {
   const [profile, setProfile] = useState(null);
 
-  const userID = sessionStorage.getItem("userID");
+  const { userID } = useUser();
 
   useEffect(() => {
     if (userID) {
@@ -22,7 +23,7 @@ export default function SpotifyUserProfile() {
           console.error("Error fetching user profile:", error);
         });
     }
-  }, []);
+  }, [userID]);
 
   if (!profile) {
     return <div>Loading...</div>;
@@ -30,9 +31,10 @@ export default function SpotifyUserProfile() {
 
   return (
     <div>
-      <h1>{profile.display_name}&apos;s Spotify Account</h1>
-      <p>{profile.followers.total} followers</p>
-      <SpotifyUserPlaylists userID={userID} />
+      <h1 className="font-bold text-lg">
+        {profile.display_name}&apos;s Spotify Account
+      </h1>
+      <SpotifyUserPlaylists />
     </div>
   );
 }

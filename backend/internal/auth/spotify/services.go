@@ -245,11 +245,20 @@ func (s *SpotifyService) GetCurrentUserProfile(userID string) (SpotifyUserProfil
     return s.SpotifyClient.GetCurrentUserProfile(accessToken)
 }
 
-// Wrapper service function for GetCurrentUserProfile client function
+// Wrapper service function for GetCurrentUserPlaylists client function
 func (s *SpotifyService) GetCurrentUserPlaylists(userID string, limit, offset int) (SpotifyPlaylistsResponse, error) {
     accessToken, err := s.getValidAccessToken(userID)
     if err != nil {
         return SpotifyPlaylistsResponse{}, err
     }
     return s.SpotifyClient.GetCurrentUserPlaylists(accessToken, limit, offset)
+}
+
+// Wrapper service function for GetPlaylistTracks client function
+func (s *SpotifyService) GetPlaylistTracks(userID, playlistID string, limit, offset int) (SpotifyPlaylistTracksResponse, error) {
+    accessToken, err := s.getValidAccessToken(userID)
+    if err != nil {
+        return SpotifyPlaylistTracksResponse{}, err
+    }
+    return s.SpotifyClient.GetPlaylistTracks(accessToken, playlistID, limit, offset)
 }

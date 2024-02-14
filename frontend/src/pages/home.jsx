@@ -8,21 +8,23 @@ import AuthenticationButton from "../components/auth0/authenticationButton";
 import BasicHeading from "../components/general/headings/basicHeading";
 import { LoginButton } from "../components/spotify/loginButton";
 import { LogoutButton } from "../components/spotify/logoutButton";
+import { useUser } from "../contexts/userContext";
 
 export default function Home() {
   const [isAuthenticatedWithSpotify, setIsAuthenticatedWithSpotify] =
     useState(false);
-  const { isAuthenticated, user } = useAuth0();
+  const { isAuthenticated } = useAuth0();
+  const { userID } = useUser();
 
   useEffect(() => {
-    if (user) {
-      fetch(`http://localhost:8080/auth/spotify/check-auth?userID=${user.sub}`)
+    if (userID) {
+      fetch(`http://localhost:8080/auth/spotify/check-auth?userID=${userID}`)
         .then((res) => res.json())
         .then((data) => {
           setIsAuthenticatedWithSpotify(data.isAuthenticated);
         });
     }
-  }, [user]);
+  }, [userID]);
 
   return (
     <div className="flex flex-col items-center justify-center text-center">
@@ -46,7 +48,6 @@ export default function Home() {
           ) : (
             <LogoutButton
               setIsAuthenticatedWithSpotify={setIsAuthenticatedWithSpotify}
-              userID={user.sub}
             />
           )}
         </>

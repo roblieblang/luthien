@@ -57,8 +57,8 @@ type Followers struct {
 
 type Image struct {
     URL    string `json:"url"`
-    Height int    `json:"height"`
-    Width  int    `json:"width"`
+    // Height int    `json:"height"` // don't need these fields at present
+    // Width  int    `json:"width"`
 }
 
 type SpotifyPlaylistsResponse struct {
@@ -76,7 +76,7 @@ type PlaylistItem struct {
     Name          string           `json:"name"`
     Description   string           `json:"description"`
     Collaborative bool             `json:"collaborative"`  // true if owner allows other users to modify the playlist
-    Images        []PlaylistImage  `json:"images"`  // may be empty or contain up to three images
+    Images        []Image          `json:"images"`  // may be empty or contain up to three images
     ExternalUrls  ExternalUrls     `json:"external_urls"`
     Href          string           `json:"href"`
     Owner         PlaylistOwner    `json:"owner"`
@@ -86,12 +86,6 @@ type PlaylistItem struct {
     Tracks        PlaylistTracks   `json:"tracks"`  // collection containing a link to endpoint which contains full details of playlist tracks
     Type          string           `json:"type"`
     URI           string           `json:"uri"`
-}
-
-type PlaylistImage struct {
-    Height *int    `json:"height"` // Using *int to allow for null value
-    URL    string  `json:"url"`
-    Width  *int    `json:"width"` // Using *int to allow for null value
 }
 
 type PlaylistOwner struct {
@@ -108,6 +102,37 @@ type PlaylistTracks struct {
     Total int    `json:"total"`
 }
 
+type SpotifyPlaylistTracksResponse struct {
+    Items  []PlaylistTrackItem `json:"items"`
+    Limit  int                 `json:"limit"`
+    Offset int                 `json:"offset"`
+}
+
+type PlaylistTrackItem struct {
+    Track TrackDetails `json:"track"`
+}
+
+type TrackDetails struct {
+    Album       AlbumDetails   `json:"album"`
+    Artists     []Artist       `json:"artists"`
+    ExternalIDs ExternalIDs    `json:"external_ids"`
+    Name        string         `json:"name"`
+}
+
+type AlbumDetails struct {
+    Name string `json:"name"`
+    Images      []Image        `json:"images"`
+}
+
+type Artist struct {
+    Name string `json:"name"`
+}
+
+type ExternalIDs struct {
+    ISRC string `json:"isrc"`
+}
+
+// Returns a new SpotifyClient struct 
 func NewSpotifyClient(appCtx *utils.AppContext) *SpotifyClient {
     return &SpotifyClient{
         AppContext: appCtx,
@@ -197,12 +222,59 @@ func (c *SpotifyClient) GetCurrentUserPlaylists(accessToken string, limit, offse
 	return playlistsResponse, nil
 }
 
-// TODO: Gets playlist tracks https://developer.spotify.com/documentation/web-api/reference/get-playlist
-func (c *SpotifyClient) GetPlaylistTracks(accessToken, playlistID string, limit, offset int) (SpotifyPlaylistsResponse, error) {
-    return SpotifyPlaylistsResponse{}, nil
+// Builds a URL with necessary fields and params for Spotify's Get Playlist Items endpoint
+func (c *SpotifyClient) buildPlaylistItemsURL(playlistID string, limit, offset int) string {
+    baseURL := fmt.Sprintf("https://api.spotify.com/v1/playlists/%s/tracks", playlistID)
+    fields := "limit, offset, items(track(external_ids(isrc), name, artists(name), album(name, images)))"
+
+    encodedFields:= url.QueryEscape(fields)
+
+    params := url.Values{}
+    params.Add("fields", encodedFields)
+    params.Add("limit", fmt.Sprintf("%d", limit))
+	params.Add("offset", fmt.Sprintf("%d", offset))
+
+    fullURL := fmt.Sprintf("%s?%s", baseURL, params.Encode())
+
+    return fullURL
+}
+
+// Gets playlist items (with pagination [necessary due to API rate limits]).
+// Spotify documentation: https://developer.spotify.com/documentation/web-api/reference/get-playlists-tracks
+func (c *SpotifyClient) GetPlaylistTracks(accessToken, playlistID string, limit, offset int) (SpotifyPlaylistTracksResponse, error) {
+    url := c.buildPlaylistItemsURL(playlistID, limit, offset)
+
+    req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+        return SpotifyPlaylistTracksResponse{}, err
+    }
+
+    req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", accessToken))
+
+    res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return SpotifyPlaylistTracksResponse{}, err
+	}
+	defer res.Body.Close()
+
+    body, err := io.ReadAll(res.Body)
+    if err != nil {
+        return SpotifyPlaylistTracksResponse{}, err
+    }
+
+    if res.StatusCode >= 400 {
+        return SpotifyPlaylistTracksResponse{}, fmt.Errorf("spotify API request failed with status %d: %s", res.StatusCode, string(body))
+    }
+
+	var playlistTracks SpotifyPlaylistTracksResponse
+	if err := json.Unmarshal(body, &playlistTracks); err != nil {
+		return SpotifyPlaylistTracksResponse{}, err
+	}
+
+    return playlistTracks, nil
 }
 
 // TODO: Implement Create playlist
 
-// TODO: Implement Update playlist 
+// TODO: Implement Update playlist(?) 
 

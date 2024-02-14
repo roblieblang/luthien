@@ -65,6 +65,7 @@ func main() {
     router.GET("/auth/spotify/check-auth", spotifyHandler.CheckAuthHandler)
     router.GET("/spotify/current-profile", spotifyHandler.GetCurrentUserProfileHandler)
     router.GET("/spotify/current-user-playlists", spotifyHandler.GetCurrentUserPlaylistsHandler)
+    router.GET("/spotify/playlist-tracks", spotifyHandler.GetPlaylistTracksHandler)
 
     router.GET("/", func(c *gin.Context) {
         c.JSON(200, gin.H{

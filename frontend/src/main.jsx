@@ -4,6 +4,7 @@ import { BrowserRouter as Router } from "react-router-dom";
 import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App.jsx";
+import { UserProvider } from "./contexts/userContext.jsx";
 import "./index.css";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
@@ -18,7 +19,9 @@ ReactDOM.createRoot(document.getElementById("root")).render(
       cacheLocation="localstorage"
     >
       <Router>
-        <App />
+        <UserProvider>
+          <App />
+        </UserProvider>
       </Router>
     </Auth0Provider>
   </React.StrictMode>

@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
+import { useUser } from "../../contexts/userContext";
 import SpotifyPlaylist from "./spotifyPlaylist.";
 
-export default function SpotifyUserPlaylists({ userID }) {
+export default function SpotifyUserPlaylists() {
   const [playlists, setPlaylists] = useState([]);
+  const { userID } = useUser();
 
-  const limit = 5;
+  const limit = ""; // TODO: will need to handle pagination
   const offset = 0;
 
   useEffect(() => {
@@ -25,15 +27,15 @@ export default function SpotifyUserPlaylists({ userID }) {
           console.error("Error fetching user playlists:", error);
         });
     }
-  }, []);
+  }, [userID]);
 
   if (playlists.length === 0) {
     return <div>Loading playlists...</div>;
   }
 
   return (
-    <div>
-      <h2>Playlists</h2>
+    <div className="flex flex-col items-center justify-center">
+      <h2 className="text-xl font-semibold">Playlists</h2>
       {playlists.map((playlist) => (
         <SpotifyPlaylist key={playlist.id} playlist={playlist} />
       ))}

@@ -125,9 +125,7 @@ func (h *SpotifyHandler) GetCurrentUserProfileHandler(c *gin.Context) {
 }
 
 // Handles the retrieval of the current user's Spotify playlists
-// TODO: probably doesn't need to be exposed as an endpoint. 
-    // will just need a single endpoint that gets the playlists, 
-    // each individual playlist therein, and each individual playlist's items
+// TODO: maybe this endpoint should get all playlists AND all tracks for each playlist in one go
 func(h *SpotifyHandler) GetCurrentUserPlaylistsHandler(c *gin.Context) {
     defaultLimit := 20
     defaultOffset := 0
@@ -157,4 +155,42 @@ func(h *SpotifyHandler) GetCurrentUserPlaylistsHandler(c *gin.Context) {
     }
 
     c.JSON(http.StatusOK, userPlaylists)
+}
+
+// Handles the retrieval of a single playlist's tracks
+func(h *SpotifyHandler) GetPlaylistTracksHandler(c *gin.Context) {
+    defaultLimit := 20
+    defaultOffset := 0
+
+    limitStr := c.DefaultQuery("limit", strconv.Itoa(defaultLimit))
+    limit, err := strconv.Atoi(limitStr)
+    if err != nil {
+        limit = defaultLimit
+    }
+
+    offsetStr := c.DefaultQuery("offset", strconv.Itoa(defaultOffset))
+    offset, err := strconv.Atoi(offsetStr)
+    if err != nil {
+        offset = defaultOffset
+    }
+
+    userID := c.Query("userID")
+    if userID == "" {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "userID query parameter is required"})
+        return
+    }
+
+    playlistID := c.Query("playlistID")
+    if playlistID == "" {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "playlistID query parameter is required"})
+        return
+    }
+    
+    playlistTracks, err := h.spotifyService.GetPlaylistTracks(userID, playlistID, limit, offset)
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+        return
+    }
+
+    c.JSON(http.StatusOK, playlistTracks)
 }

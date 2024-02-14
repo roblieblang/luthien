@@ -1,4 +1,8 @@
-export const LogoutButton = ({ setIsAuthenticatedWithSpotify, userID }) => {
+import { useUser } from "../../contexts/userContext";
+
+export const LogoutButton = ({ setIsAuthenticatedWithSpotify }) => {
+  const { userID } = useUser();
+
   const handleLogout = () => {
     fetch("http://localhost:8080/auth/spotify/logout", {
       method: "POST",
