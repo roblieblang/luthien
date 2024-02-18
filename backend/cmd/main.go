@@ -77,5 +77,5 @@ func main() {
 	if err := router.Run(":" + envConfig.Port); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}
-    // TODO: make sure serving over HTTPS in prod
+    // TODO: make sure to serve over HTTPS in production
 }

@@ -2,6 +2,7 @@ package auth0
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"time"
 
@@ -21,8 +22,8 @@ func NewAuth0Service(auth0Client *Auth0Client, appCtx *utils.AppContext) *Auth0S
     }
 }
 
-// Stores an access token in Redis
-func (s *Auth0Service) StoreToken(tokenResponse Auth0TokenResponse) error{
+// Stores an Auth0 Management API access token in Redis
+func (s *Auth0Service) storeAuth0Token(tokenResponse Auth0TokenResponse) error{
     err := s.AppContext.RedisClient.Set(context.Background(), "auth0ManagementAPIAccessToken", tokenResponse.AccessToken, time.Duration(tokenResponse.ExpiresIn) * time.Second).Err()
     if err != nil {
         log.Printf("There was an issue storing the Auth0 Management API Access Token: %v", err)
@@ -31,8 +32,8 @@ func (s *Auth0Service) StoreToken(tokenResponse Auth0TokenResponse) error{
     return nil
 }
 
-// Retrieves an existing access token from Redis
-func (s *Auth0Service) RetrieveToken() (string, error){
+// Retrieves an existing Auth0 Management API access token from Redis
+func (s *Auth0Service) retrieveAuth0Token() (string, error){
 	accessToken, err := s.AppContext.RedisClient.Get(context.Background(), "auth0ManagementAPIAccessToken").Result()
     // Token not found, not an error
     if err == redis.Nil {
@@ -44,8 +45,32 @@ func (s *Auth0Service) RetrieveToken() (string, error){
     return accessToken, nil
 }
 
+// Stores a Google APi access token in Redis
+func (s *Auth0Service) storeGoogleToken(userID, googleToken string, expiresIn int) error {
+    err := s.AppContext.RedisClient.Set(context.Background(), "googleAPIAccessToken:"+userID, googleToken, time.Duration(expiresIn) * time.Second).Err()
+    if err != nil {
+        log.Printf("There was an issue storing the Google API Access Token: %v", err)
+        return err
+    }
+    return nil
+}
+
+// Retrieves an existing Google API access token from Redis
+func (s *Auth0Service) RetrieveGoogleToken(userID string) (string, error){
+	accessToken, err := s.AppContext.RedisClient.Get(context.Background(), "googleAPIAccessToken:"+userID).Result()
+    // Token not found, not an error
+    if err == redis.Nil {
+        return "", nil
+    } else if err != nil {
+        log.Printf("Failed to retrieve Google API Access Token: %v", err)
+        return "", err
+    }
+    return accessToken, nil
+}
+
+// Helper function for getting a valid access token
 func (s *Auth0Service) getValidAccessToken() (string, error) {
-    accessToken, err := s.RetrieveToken()
+    accessToken, err := s.retrieveAuth0Token()
     // Check for redis.Nil to determine if the key was simply not found i.e. not an actual error
     if err == redis.Nil {
         log.Println("Access token not found in Redis, requesting a new one.")
@@ -60,7 +85,7 @@ func (s *Auth0Service) getValidAccessToken() (string, error) {
             log.Printf("Failed to check token freshness: %v", err)
             return "", err
         }
-        if !isExpired {
+        if !isExpired && accessToken != "" {
             // The token is valid and not expired
             return accessToken, nil
         }
@@ -73,7 +98,7 @@ func (s *Auth0Service) getValidAccessToken() (string, error) {
         log.Printf("Failed to request new Auth0 Management API Access Token: %v", err)
         return "", err
     }
-    err = s.StoreToken(tokenResponse)
+    err = s.storeAuth0Token(tokenResponse)
     if err != nil {
         log.Printf("Failed to store new Auth0 Management API Access Token: %v", err)
         return "", err
@@ -81,13 +106,36 @@ func (s *Auth0Service) getValidAccessToken() (string, error) {
     return tokenResponse.AccessToken, nil
 }
 
-// Wrapper service function for GetUserMetadata client function
+// Extracts a Google API access token from an Auth0UserMetadata struct
+func (s *Auth0Service) extractGoogleAccessToken(userMetadata Auth0UserMetadata) (string, int, error) {
+    for _, identity := range userMetadata.Identities {
+        if identity.Provider == "google-oauth2" {
+            return identity.AccessToken, identity.ExpiresIn, nil
+        }
+    }
+    return "", 0, fmt.Errorf("google access token not found")
+}
+
+// Wrapper service function for GetUserMetadata client function that extracts and stores Google access token from response
 func (s *Auth0Service) GetUserMetadata(userID string) (Auth0UserMetadata, error) {
     accessToken, err := s.getValidAccessToken()
     if err != nil {
         return Auth0UserMetadata{}, err
     }
-    return s.Auth0Client.GetUserMetadata(accessToken, userID)
+    userMetadata, err := s.Auth0Client.GetUserMetadata(accessToken, userID)
+    if err != nil {
+        return Auth0UserMetadata{}, err
+    }
+    googleAccessToken, expiresIn, err := s.extractGoogleAccessToken(userMetadata)
+    if err != nil {
+        return userMetadata, err
+    }
+
+    if err := s.storeGoogleToken(userID, googleAccessToken, expiresIn); err != nil {
+        return userMetadata, err
+    }
+
+    return userMetadata, nil
 }
 
 // Wrapper service function for UpdateUserMetadata client function

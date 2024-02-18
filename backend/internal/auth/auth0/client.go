@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -21,6 +22,8 @@ type Auth0Client struct {
 type Auth0TokenResponse struct {
     AccessToken string `json:"access_token"`
     ExpiresIn   int    `json:"expires_in"`
+	Scope 		string `json:"scope"`
+	TokenType 	string `json:"token_type"`
 }
 
 type Auth0UserMetadata struct {
@@ -42,10 +45,12 @@ type Auth0UserMetadata struct {
 }
 
 type Identity struct {
-	Connection string `json:"connection"`
-	Provider   string `json:"provider"`
-	UserID     string `json:"user_id"`
-	IsSocial   bool   `json:"isSocial"`
+	Connection 	string `json:"connection"`
+	Provider   	string `json:"provider"`
+	AccessToken string `json:"access_token"`
+	ExpiresIn	int	   `json:"expires_in"`
+	UserID     	string `json:"user_id"`
+	IsSocial   	bool   `json:"isSocial"`
 }
 
 func NewAuth0Client(appCtx *utils.AppContext) *Auth0Client {
@@ -60,22 +65,24 @@ func (c *Auth0Client) RequestToken() (Auth0TokenResponse, error) {
 	clientID := c.AppContext.EnvConfig.Auth0ManagementClientID
 	domain := c.AppContext.EnvConfig.Auth0Domain
 
-    url := "https://" + domain + "/oauth/token"
+    url_ := "https://"+domain+"/oauth/token"
 
-    payload := fmt.Sprintf(
-		"{\"client_id\":\"%s\",\"client_secret\":\"%s\",\"audience\":\"https://%s/api/v2/\",\"grant_type\":\"client_credentials\"}", 
-		clientID, 
-		clientSecret, 
-		domain,
-	)
+	data := url.Values{}
+	data.Set("grant_type", "client_credentials")
+	data.Set("client_id", clientID)
+	data.Set("client_secret", clientSecret)
+	data.Set("audience", "https://" + domain + "/api/v2/")
 
-    req, err := http.NewRequest("POST", url, strings.NewReader(payload))
+	payload := strings.NewReader(data.Encode())
+
+
+    req, err := http.NewRequest("POST", url_, payload)
     if err != nil {
 		log.Printf("Failed to create HTTP request: %v", err)
         return Auth0TokenResponse{}, err
     }
 
-	req.Header.Add("content-type", "application/json")
+	req.Header.Add("content-type", "application/x-www-form-urlencoded")
 
     res, err := http.DefaultClient.Do(req)
 	if err != nil {
@@ -111,8 +118,8 @@ func (c *Auth0Client) GetUserMetadata(accessToken string, userID string) (Auth0U
         return Auth0UserMetadata{}, err
     }
 
+	req.Header.Add("Accept", "application/json")
     req.Header.Add("authorization", fmt.Sprintf("Bearer %s", accessToken))
-    req.Header.Add("content-type", "application/json")
 
     res, err := http.DefaultClient.Do(req)
 	if err != nil {

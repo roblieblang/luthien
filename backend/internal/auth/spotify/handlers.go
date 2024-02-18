@@ -76,7 +76,7 @@ func (h *SpotifyHandler) CheckAuthHandler(c *gin.Context) {
 
     userMetadata, err := h.spotifyService.Auth0Service.GetUserMetadata(userID) 
     if err != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get user metadata"})
+        c.JSON(http.StatusInternalServerError, gin.H{"error": err})
 		return
     }
 
