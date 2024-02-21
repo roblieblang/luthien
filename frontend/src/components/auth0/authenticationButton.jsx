@@ -16,7 +16,16 @@ const AuthenticationButton = () => {
   ) : (
     <button
       className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 my-5 rounded-full border-2 border-black"
-      onClick={() => loginWithRedirect()}
+      onClick={() =>
+        loginWithRedirect({
+          access_type: "offline",
+          // connection_scope: "https://www.googleapis.com/auth/youtube",
+          connection_scope: "https://www.googleapis.com/auth/youtube.force-ssl",
+          appState: {
+            returnTo: "/",
+          },
+        })
+      }
     >
       Log In (Auth0)
     </button>

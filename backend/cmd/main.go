@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/roblieblang/luthien/backend/internal/auth/auth0"
 	"github.com/roblieblang/luthien/backend/internal/auth/spotify"
+	"github.com/roblieblang/luthien/backend/internal/auth/youtube"
 	"github.com/roblieblang/luthien/backend/internal/config"
 	"github.com/roblieblang/luthien/backend/internal/user"
 	"github.com/roblieblang/luthien/backend/internal/utils"
@@ -59,14 +60,25 @@ func main() {
     spotifyService := spotify.NewSpotifyService(spotifyClient, auth0Service, appCtx)
     spotifyHandler := spotify.NewSpotifyHandler(spotifyService)
 
+    // Spotify authentication endpoints
     router.GET("/auth/spotify/login", spotifyHandler.LoginHandler)
     router.POST("/auth/spotify/callback", spotifyHandler.CallbackHandler)
     router.POST("/auth/spotify/logout", spotifyHandler.LogoutHandler)
     router.GET("/auth/spotify/check-auth", spotifyHandler.CheckAuthHandler)
+
+    // Spotify user data endpoints
     router.GET("/spotify/current-profile", spotifyHandler.GetCurrentUserProfileHandler)
     router.GET("/spotify/current-user-playlists", spotifyHandler.GetCurrentUserPlaylistsHandler)
     router.GET("/spotify/playlist-tracks", spotifyHandler.GetPlaylistTracksHandler)
     router.POST("/spotify/create-playlist", spotifyHandler.CreatePlaylistHandler)
+
+    // YouTube
+    youTubeClient := youtube.NewYouTubeClient(appCtx)
+    youTubeService := youtube.NewYouTubeService(youTubeClient, auth0Service)
+    youTubeHandler := youtube.NewYouTubeHandler(youTubeService)
+
+    router.GET("/youtube/current-user-playlists", youTubeHandler.GetCurrentUserPlaylistsHandler)
+
 
     router.GET("/", func(c *gin.Context) {
         c.JSON(200, gin.H{
@@ -77,5 +89,6 @@ func main() {
 	if err := router.Run(":" + envConfig.Port); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}
+
     // TODO: make sure to serve over HTTPS in production
 }

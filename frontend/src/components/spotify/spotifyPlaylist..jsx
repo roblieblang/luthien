@@ -28,7 +28,7 @@ export default function SpotifyPlaylist({ playlist }) {
         <h3 className="text-base font-medium">{playlist.name}</h3>
         <p>{playlist.tracks.total} tracks</p>
         <p>Owner: {playlist.owner.display_name}</p>
-        {/* <p>{playlist.description || ""}</p> */}
+        <p>{playlist.description || ""}</p>
       </div>
       <div className="ml-auto flex flex-col justify-between">
         <LinkButton
