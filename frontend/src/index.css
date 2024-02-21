@@ -9,30 +9,9 @@
   font-size: large;
 
   color-scheme: light dark;
-
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
 }
 
 body {
   @apply bg-customBG;
   @apply font-custom;
-  margin: 0;
-  display: flex;
-  place-items: center;
 }
-
-/* @media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    color: white;
-    background-color: #323232;
-  }
-} */

@@ -6,7 +6,7 @@ const AuthenticationButton = () => {
 
   return isAuthenticated ? (
     <button
-      className="bg-customHeadline hover:bg-customButton text-customStroke font-bold py-2 px-4 rounded-full border-2 border-black"
+      className="bg-customHeadline hover:bg-customButton text-customStroke font-bold py-2 px-4 my-5 rounded-full border-2 border-black"
       onClick={() =>
         logout({ logoutParams: { returnTo: window.location.origin } })
       }
