@@ -13,18 +13,21 @@ export default {
       "2xl": "1680px",
     },
     extend: {
+      fontFamily: {
+        "custom": ["Playfair Display", "serif"],
+      },
       colors: {
-        background: "#004643",
-        headline: "#fffffe",
-        paragraph: "#abd1c6",
-        button: "#f9bc60",
-        buttonText: "#001e1d",
-        stroke: "#001e1d",
-        main: "#e8e4e6",
-        highlight: "#f9bc60",
-        secondary: "#abd1c6",
-        tertiary: "#e16162",
-        
+        customBG: "#0a1c1d",
+        customHeadline: "#202d27",
+        customButton: "#95b2f1",
+        customStroke: "#e2714a",
+        // customParagraph: "#94a1b2",
+        // customButtonText: "#fffffe",
+        // customPrimary: "#fffffe",
+        // customHighlight: "#e2714a",
+        // customSecondary: "#72757e",
+        // customTertiary: "#2cb67d",
+
       }
     },
   },

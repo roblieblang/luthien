@@ -28,19 +28,19 @@ export default function Home() {
 
   return (
     <div className="flex flex-col items-center justify-center text-center">
-      <BasicHeading text="Home Page" />
+      <BasicHeading text="THE Best Playlist Conversion Tool." />
       {isAuthenticated && (
         <>
           <div className="flex flex-row space-x-2">
             <Link
-              className="rounded-md bg-yellow-400 border-4 border-black hover:bg-yellow-600"
+              className="rounded-md bg-customButton border-4 border-black hover:bg-customStroke"
               to="/profile"
             >
               <IoMdPerson size={35} />
             </Link>
             {isAuthenticatedWithSpotify && (
               <Link
-                className="rounded-md bg-yellow-400 border-4 border-black hover:bg-yellow-600"
+                className="rounded-md bg-customButton border-4 border-black hover:bg-customStroke"
                 to="/music"
               >
                 <MdLibraryMusic size={35} />

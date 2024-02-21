@@ -21,7 +21,7 @@ export const LogoutButton = ({ setIsAuthenticatedWithSpotify }) => {
   return (
     <div>
       <button
-        className="bg-green-600 hover:bg-red-700 text-white font-bold py-2 px-4 my-5 rounded-full border-2 border-black"
+        className="bg-customHeadline hover:bg-customButton text-customStroke font-bold py-2 px-4 my-5 rounded-full border-2 border-black"
         onClick={handleLogout}
       >
         Log Out of Spotify
