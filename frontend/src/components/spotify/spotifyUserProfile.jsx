@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useUser } from "../../contexts/userContext";
-import SpotifyUserPlaylists from "./spotifyUserPlaylists";
+import UserPlaylists from "../userPlaylists";
 
 export default function SpotifyUserProfile() {
   const { userID, updateSpotifyUserID } = useUser();
@@ -34,7 +34,7 @@ export default function SpotifyUserProfile() {
       <h1 className="font-bold text-lg">
         {profile.display_name}&apos;s Spotify Account
       </h1>
-      <SpotifyUserPlaylists />
+      <UserPlaylists serviceType={"spotify"} />
     </div>
   );
 }

@@ -1,15 +1,9 @@
-import { useEffect, useState } from "react";
-import { useUser } from "../../contexts/userContext";
+import { useState } from "react";
 import LinkButton from "../general/buttons/linkButton";
 import TrackList from "../trackList";
 
 export default function SpotifyPlaylist({ playlist }) {
   const [showTracks, setShowTracks] = useState(false);
-  const { userID, spotifyUserID } = useUser();
-
-  useEffect(() => {
-    console.log(`\nSpotify UID: ${spotifyUserID}\nApp UID: ${userID}`);
-  }, [userID, spotifyUserID]);
 
   const toggleTracks = () => {
     setShowTracks(!showTracks);
@@ -28,6 +22,7 @@ export default function SpotifyPlaylist({ playlist }) {
         <h3 className="text-base font-medium">{playlist.name}</h3>
         <p>{playlist.tracks.total} tracks</p>
         <p>Owner: {playlist.owner.display_name}</p>
+        {/* TODO: will need to escape certain characters if keeping the description */}
         <p>{playlist.description || ""}</p>
       </div>
       <div className="ml-auto flex flex-col justify-between">
