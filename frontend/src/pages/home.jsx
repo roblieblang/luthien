@@ -27,43 +27,56 @@ export default function Home() {
   }, [userID]);
 
   return (
-    //This outer div will hold all the components needed in the center of the screen
-    <div className="flex flex-col items-center justify-center gap-2 min-h-screen">
-      <BasicHeading text="A Playlist Conversion Tool." />
-      {isAuthenticated && (
-        <>
-        
-          {/* This div will hold the music button in a row in the center for now */}
-          <div className="flex flex-row space-x-2">
-            <Link
-              className="rounded-md bg-customButton border-4 border-black hover:bg-customStroke"
-              to="/profile"
-            >
-              <IoMdPerson size={45} />
-            </Link>
-            {isAuthenticatedWithSpotify && (
-              <Link
-                className="rounded-md bg-customButton border-4 border-black hover:bg-customStroke"
-                to="/music"
-              >
-                <MdLibraryMusic size={45} />
-              </Link>
-            )}
-          </div>
+    //This outer div will hold all the components and size according to screen size
+    <div className="flex flex-col">
 
-          {/* This div will hold the log in and log out buttons in a row in the center for now */}
-          <div className="flex flex-row space-x-2">
-            {!isAuthenticatedWithSpotify ? ( // or YouTube
-              <LoginButton />
-            ) : (
-              <LogoutButton
-                setIsAuthenticatedWithSpotify={setIsAuthenticatedWithSpotify}
-              />
-            )}
-            <AuthenticationButton />
-          </div>
-        </>
-      )}
+      {/* This header will hold redirect icons in top-left corner of screen */}
+      <div className="absolute top-0 left-0 p-4 flex flex-row space-x-2">
+        <Link
+          className="bg-transparent"
+          to="/profile"
+        >
+          <IoMdPerson size={35} />
+        </Link>
+        {/* This statement shows the Music Library button if the user is authenticated with Spotify */}
+        {isAuthenticatedWithSpotify && (
+          <Link
+            className="bg-transparent"
+            to="/music"
+          >
+            <MdLibraryMusic size={35} />
+          </Link>
+        )}
+      </div>
+
+      {/* This title will hold the heading component */}
+      <title className="absolute inset-0 flex flex-col items-center justify-center mb-10">
+        <BasicHeading text="A Playlist Conversion Tool." />
+      </title>
+
+       {/* This main content area will hold the login/out buttons */}
+      <main className="absolute inset-0 flex flex-col items-center justify-center mt-10">
+        {isAuthenticated && (
+          <>
+            {/* This div will hold the log in and log out buttons in a row in the center for now */}
+            <div className="flex flex-row space-x-2">
+              {!isAuthenticatedWithSpotify ? ( // or YouTube
+                <LoginButton />
+              ) : (
+                <LogoutButton
+                  setIsAuthenticatedWithSpotify={setIsAuthenticatedWithSpotify}
+                />
+              )}
+              <AuthenticationButton />
+            </div>
+          </>
+        )}
+      </main>
+
+      {/* This content area will be for a minimal footer */}
+      <footer>
+
+      </footer>
     </div>
   );
 }

@@ -6,7 +6,7 @@ const AuthenticationButton = () => {
 
   return isAuthenticated ? (
     <button
-      className="bg-customHeadline hover:bg-customButton text-customStroke font-bold py-2 px-4 my-5 rounded-full border-2 border-black"
+      className="bg-customHeadline hover:bg-customButton text-customStroke hover:text-slate-800 font-bold py-1 px-2 my-6 rounded-md border border-black"
       onClick={() =>
         logout({ logoutParams: { returnTo: window.location.origin } })
       }
@@ -15,7 +15,7 @@ const AuthenticationButton = () => {
     </button>
   ) : (
     <button
-      className="bg-customHeadline hover:bg-customButton text-customStroke font-bold py-2 px-4 my-5 rounded-full border-2 border-black"
+      className="bg-customHeadline hover:bg-customButton text-customStroke hover:text-slate-800 font-bold py-1 px-2 my-6 rounded-md border border-black"
       onClick={() => loginWithRedirect()}
     >
       Log In (Auth0)
