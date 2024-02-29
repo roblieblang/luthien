@@ -1,8 +1,9 @@
 import { Route, Routes } from "react-router-dom";
-import Callback from "./pages/callback";
+import GoogleCallback from "./pages/googleCallback";
 import Home from "./pages/home";
 import Music from "./pages/music";
 import Profile from "./pages/profile";
+import SpotifyCallback from "./pages/spotifyCallback";
 
 export default function App() {
   return (
@@ -10,7 +11,8 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/profile" element={<Profile />} />
-        <Route path="/callback" element={<Callback />} />
+        <Route path="/spotify/callback" element={<SpotifyCallback />} />
+        <Route path="/google/callback" element={<GoogleCallback />} />
         <Route path="/music" element={<Music />} />
       </Routes>
     </>

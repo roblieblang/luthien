@@ -15,6 +15,9 @@ type EnvConfig struct {
     SpotifyClientID             string
     SpotifyClientSecret         string
     SpotifyRedirectURI          string
+    GoogleClientID              string
+    GoogleClientSecret          string
+    GoogleRedirectURI           string
     Auth0ManagementClientID     string
     Auth0ManagementClientSecret string
     Auth0Domain                 string
@@ -35,6 +38,9 @@ func LoadENV() *EnvConfig {
         SpotifyClientID:                os.Getenv("SPOTIFY_CLIENT_ID"),
         SpotifyClientSecret:            os.Getenv("SPOTIFY_CLIENT_SECRET"),
         SpotifyRedirectURI:             os.Getenv("SPOTIFY_REDIRECT_URI"),
+        GoogleClientID:                 os.Getenv("GOOGLE_CLIENT_ID"),
+        GoogleClientSecret:             os.Getenv("GOOGLE_CLIENT_SECRET"),
+        GoogleRedirectURI:              os.Getenv("GOOGLE_REDIRECT_URI"),
         Auth0ManagementClientID:        os.Getenv("AUTH0_MANAGEMENT_CLIENT_ID"),
         Auth0ManagementClientSecret:    os.Getenv("AUTH0_MANAGEMENT_CLIENT_SECRET"),
         Auth0Domain:                    os.Getenv("AUTH0_DOMAIN"),

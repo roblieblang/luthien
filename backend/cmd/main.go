@@ -42,20 +42,21 @@ func main() {
     }))
 
 
-    // Users
+    // User setup
     userDAO := user.NewDAO(appCtx.MongoClient, appCtx.EnvConfig.DatabaseName, "users")
     userService := user.NewUserService(userDAO)
     userHandler := user.NewUserHandler(userService)
 
+    // User data endpoints
     router.POST("/users", userHandler.CreateUser)
     router.GET("/users", userHandler.GetAllUsers)
     router.GET("/users/:id", userHandler.GetUser)
 
-    // Auth0
+    // Auth0 setup
     auth0Client := auth0.NewAuth0Client(appCtx)
     auth0Service := auth0.NewAuth0Service(auth0Client, appCtx)
 
-    // Spotify
+    // Spotify setup
     spotifyClient := spotify.NewSpotifyClient(appCtx)
     spotifyService := spotify.NewSpotifyService(spotifyClient, auth0Service, appCtx)
     spotifyHandler := spotify.NewSpotifyHandler(spotifyService)
@@ -72,12 +73,20 @@ func main() {
     router.GET("/spotify/playlist-tracks", spotifyHandler.GetPlaylistTracksHandler)
     router.POST("/spotify/create-playlist", spotifyHandler.CreatePlaylistHandler)
 
-    // YouTube
+    // YouTube setup
     youTubeClient := youtube.NewYouTubeClient(appCtx)
     youTubeService := youtube.NewYouTubeService(youTubeClient, auth0Service)
     youTubeHandler := youtube.NewYouTubeHandler(youTubeService)
 
+    // Google authentication endpoints
+    router.GET("/auth/google/login", youTubeHandler.LoginHandler)
+    router.POST("/auth/google/callback", youTubeHandler.CallbackHandler)
+    router.POST("/auth/google/logout", youTubeHandler.LogoutHandler)
+    router.GET("/auth/google/check-auth", youTubeHandler.CheckAuthHandler)
+
+    // YouTube data endpoints
     router.GET("/youtube/current-user-playlists", youTubeHandler.GetCurrentUserPlaylistsHandler)
+    router.GET("/youtube/playlist-tracks", youTubeHandler.GetPlaylistItemsHandler)
 
 
     router.GET("/", func(c *gin.Context) {

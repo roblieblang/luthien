@@ -15,7 +15,6 @@ export default function TrackList({ playlistID }) {
   useEffect(() => {
     if (playlistID && userID) {
       fetch(
-        // This endpoint seems to be having issues on Spotify's end. Last Working: 2/14/24.
         `http://localhost:8080/spotify/playlist-tracks?userID=${userID}&limit=${limit}&offset=${offset}&playlistID=${playlistID}`
       )
         .then((res) => {
