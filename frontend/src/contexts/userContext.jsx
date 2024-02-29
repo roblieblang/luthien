@@ -1,30 +1,84 @@
 import { useAuth0 } from "@auth0/auth0-react";
-import { createContext, useContext, useEffect, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 
 const UserContext = createContext();
 
 export const useUser = () => useContext(UserContext);
 
 export const UserProvider = ({ children }) => {
-  const { isAuthenticated, user } = useAuth0();
+  const { isAuthenticated, user, logout } = useAuth0();
   const [userID, setUserID] = useState(null);
   const [spotifyUserID, setSpotifyUserID] = useState(null);
-
-  const updateSpotifyUserID = (spotifyUserID) => {
-    setSpotifyUserID(spotifyUserID);
-  };
+  const [googleUserID, setGoogleUserID] = useState(null);
+  const [spotifyAuthStatus, setSpotifyAuthStatus] = useState(false);
+  const [youTubeAuthStatus, setYouTubeAuthStatus] = useState(false);
 
   useEffect(() => {
     if (isAuthenticated && user) {
+      sessionStorage.setItem("userID", user.sub);
       setUserID(user.sub);
     } else {
       setUserID(null);
     }
   }, [isAuthenticated, user]);
 
+  const checkAuthStatus = useCallback(
+    (serviceURL, setIsAuthenticated) => {
+      if (userID) {
+        fetch(`${serviceURL}?userID=${userID}`)
+          .then((res) => {
+            if (!res.ok) {
+              throw new Error(`Failed to fetch, status code: ${res.status}`);
+            }
+            return res.json();
+          })
+          .then((data) => {
+            setIsAuthenticated(data.isAuthenticated);
+          })
+          .catch((error) => {
+            console.error("Fetching error:", error);
+            // TODO: logout({ returnTo: window.location.origin });
+          });
+      }
+    },
+    [userID, logout]
+  );
+
+  // Spotify
+  useEffect(() => {
+    checkAuthStatus(
+      `http://localhost:8080/auth/spotify/check-auth?userID=${userID}`,
+      setSpotifyAuthStatus
+    );
+  }, [userID, checkAuthStatus]);
+
+  // Google/YouTube
+  useEffect(() => {
+    checkAuthStatus(
+      `http://localhost:8080/auth/google/check-auth?userID=${userID}`,
+      setYouTubeAuthStatus
+    );
+  }, [userID, checkAuthStatus]);
+
   return (
     <UserContext.Provider
-      value={{ userID, spotifyUserID, updateSpotifyUserID,  }}
+      value={{
+        userID,
+        spotifyUserID,
+        updateSpotifyUserID: setSpotifyUserID,
+        spotifyAuthStatus,
+        updateSpotifyAuthStatus: setSpotifyAuthStatus,
+        googleUserID,
+        updateGoogleUserID: setGoogleUserID,
+        youTubeAuthStatus,
+        updateYouTubeAuthStatus: setYouTubeAuthStatus,
+      }}
     >
       {children}
     </UserContext.Provider>
