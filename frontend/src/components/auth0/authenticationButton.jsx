@@ -1,5 +1,4 @@
 import { useAuth0 } from "@auth0/auth0-react";
-import React from "react";
 
 const AuthenticationButton = () => {
   const { loginWithRedirect, logout, isAuthenticated } = useAuth0();
@@ -19,11 +18,9 @@ const AuthenticationButton = () => {
       onClick={() =>
         loginWithRedirect({
           access_type: "offline",
-          // connection_scope: "https://www.googleapis.com/auth/youtube",
-          connection_scope: "https://www.googleapis.com/auth/youtube.force-ssl",
-          appState: {
-            returnTo: "/",
-          },
+          connection_scope: "https://www.googleapis.com/auth/youtube",
+          offline: true,
+          prompt: "consent",
         })
       }
     >

@@ -12,10 +12,12 @@ ReactDOM.createRoot(document.getElementById("root")).render(
     <Auth0Provider
       domain={import.meta.env.VITE_AUTH0_DOMAIN}
       clientId={import.meta.env.VITE_AUTH0_CLIENT_ID}
+      useRefreshTokens={true}
       authorizationParams={{
+        scope:
+          "openid profile email offline_access https://www.googleapis.com/auth/youtube read:user_idp_tokens",
         redirect_uri: window.location.origin,
       }}
-      useRefreshTokens
       cacheLocation="localstorage"
     >
       <Router>

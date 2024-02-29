@@ -1,11 +1,11 @@
 import { useEffect } from "react";
 import { useUser } from "../contexts/userContext";
 
-export default function Callback() {
+export default function SpotifyCallback() {
   const { userID } = useUser();
 
   useEffect(() => {
-    if (window.location.pathname === "/callback") {
+    if (window.location.pathname === "/spotify/callback") {
       const urlParams = new URLSearchParams(window.location.search);
       const code = urlParams.get("code");
       // const userID = sessionStorage.getItem("userID"); // I think the retrieval from session storage was faster than context
