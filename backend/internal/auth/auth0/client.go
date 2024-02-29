@@ -19,13 +19,6 @@ type Auth0Client struct {
     AppContext *utils.AppContext
 }
 
-type Auth0TokenResponse struct {
-    AccessToken string `json:"access_token"`
-    ExpiresIn   int    `json:"expires_in"`
-	Scope 		string `json:"scope"`
-	TokenType 	string `json:"token_type"`
-}
-
 type Auth0UserMetadata struct {
 	CreatedAt   time.Time `json:"created_at"`
 	Email       string    `json:"email"`
@@ -37,7 +30,8 @@ type Auth0UserMetadata struct {
 	UpdatedAt   time.Time `json:"updated_at"`
 	UserID      string    `json:"user_id"`
 	AppMetadata struct {
-		AuthenticatedWithSpotify bool `json:"authenticated_with_spotify"`
+		AuthenticatedWithSpotify 	bool `json:"authenticated_with_spotify"`
+		AuthenticatedWithGoogle 	bool `json:"authenticated_with_google"`
 	} `json:"app_metadata"`
 	LastIP      string    `json:"last_ip"`
 	LastLogin   time.Time `json:"last_login"`
@@ -45,12 +39,13 @@ type Auth0UserMetadata struct {
 }
 
 type Identity struct {
-	Connection 	string `json:"connection"`
-	Provider   	string `json:"provider"`
-	AccessToken string `json:"access_token"`
-	ExpiresIn	int	   `json:"expires_in"`
-	UserID     	string `json:"user_id"`
-	IsSocial   	bool   `json:"isSocial"`
+	Connection 		string `json:"connection"`
+	Provider   		string `json:"provider"`
+	AccessToken 	string `json:"access_token"`
+	RefreshToken 	string `json:"refresh_token"`
+	ExpiresIn		int	   `json:"expires_in"`
+	UserID     		string `json:"user_id"`
+	IsSocial   		bool   `json:"isSocial"`
 }
 
 func NewAuth0Client(appCtx *utils.AppContext) *Auth0Client {
@@ -60,7 +55,7 @@ func NewAuth0Client(appCtx *utils.AppContext) *Auth0Client {
 }
 
 // Requests a new Auth0 Management API access token
-func (c *Auth0Client) RequestToken() (Auth0TokenResponse, error) {
+func (c *Auth0Client) RequestToken() (utils.TokenResponse, error) {
     clientSecret := c.AppContext.EnvConfig.Auth0ManagementClientSecret
 	clientID := c.AppContext.EnvConfig.Auth0ManagementClientID
 	domain := c.AppContext.EnvConfig.Auth0Domain
@@ -79,7 +74,7 @@ func (c *Auth0Client) RequestToken() (Auth0TokenResponse, error) {
     req, err := http.NewRequest("POST", url_, payload)
     if err != nil {
 		log.Printf("Failed to create HTTP request: %v", err)
-        return Auth0TokenResponse{}, err
+        return utils.TokenResponse{}, err
     }
 
 	req.Header.Add("content-type", "application/x-www-form-urlencoded")
@@ -87,24 +82,23 @@ func (c *Auth0Client) RequestToken() (Auth0TokenResponse, error) {
     res, err := http.DefaultClient.Do(req)
 	if err != nil {
         log.Printf("There was an issue requesting the Auth0 Management API access token: %v", err)
-        return Auth0TokenResponse{}, err
+        return utils.TokenResponse{}, err
     }
 	defer res.Body.Close()
 
     body, err := io.ReadAll(res.Body)
 	if err != nil {
         log.Printf("There was an issue reading the response body: %v", err)
-        return Auth0TokenResponse{}, err
+        return utils.TokenResponse{}, err
     }
 
-    // Unmarshal the JSON response into the Auth0TokenResponse struct
-    var tokenResponse Auth0TokenResponse
+    // Unmarshal the JSON response into the utils.TokenResponse struct
+    var tokenResponse utils.TokenResponse
     err = json.Unmarshal(body, &tokenResponse)
     if err != nil {
         log.Printf("There was an issue unmarshaling the response: %v", err)
-        return Auth0TokenResponse{}, err
+        return utils.TokenResponse{}, err
     }
-
     return tokenResponse, nil
 }
 
@@ -139,13 +133,12 @@ func (c *Auth0Client) GetUserMetadata(accessToken string, userID string) (Auth0U
         return Auth0UserMetadata{}, err
     }
 
+	
 	var userMetadata Auth0UserMetadata
-
 	if err := json.Unmarshal(body, &userMetadata); err != nil {
 		log.Printf("Failed to unmarshal response body: %v", err)
 		return Auth0UserMetadata{}, err
 	}
-
 	return userMetadata, nil
 }
 

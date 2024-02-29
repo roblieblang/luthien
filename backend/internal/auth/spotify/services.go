@@ -8,8 +8,6 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/redis/go-redis/v9"
-
 	"github.com/roblieblang/luthien/backend/internal/auth/auth0"
 	"github.com/roblieblang/luthien/backend/internal/utils"
 )
@@ -87,12 +85,26 @@ func (s *SpotifyService) HandleCallback(code, userID, sessionID string) error {
         return errors.New("empty access token")
     }
 
-    err = s.setToken("Access", userID, tokenResponse.AccessToken, tokenResponse.ExpiresIn)
+    // Store the access token
+    params := utils.SetTokenParams{
+        TokenKind: "access",
+        Party: "spotify",
+        UserID: userID, 
+        Token: tokenResponse.AccessToken,
+        ExpiresIn: tokenResponse.ExpiresIn,
+        AppCtx: *s.AppContext,
+    }
+    err = utils.SetToken(params)
     if err != nil {
         return fmt.Errorf("error storing the access token: %v", err)
     }
-    // This is an arbitrary expiry. setToken() handles refresh token expiration time
-    err = s.setToken("Refresh", userID, tokenResponse.RefreshToken, 0) 
+
+    // Now store the access token
+    params.TokenKind = "refresh"
+    params.Token = tokenResponse.RefreshToken
+    // This is an arbitrary expiry. SetToken() handles refresh token expiration time
+    params.ExpiresIn = 0
+    err = utils.SetToken(params)
     if err != nil {
         return fmt.Errorf("error storing the refresh token: %v", err)
     }
@@ -109,137 +121,18 @@ func (s *SpotifyService) HandleCallback(code, userID, sessionID string) error {
     return nil
 }
 
-// Called when user clicks "Log Out of Spotify" button on the user interface
-func (s *SpotifyService) HandleLogout(userID string) error {
-    if err := s.ClearTokens(userID); err != nil {
-        return fmt.Errorf("error clearing tokens from Redis: %v", err)
-    }
-
-    // Change user's Spotify authentication status to `false` 
-    updatedAuthStatus := map[string]interface{}{
-        "app_metadata": map[string]bool{
-            "authenticated_with_spotify": false,
-        },
-    }
-    if err := s.Auth0Service.UpdateUserMetadata(userID, updatedAuthStatus); err != nil {
-        return fmt.Errorf("error updating user metadata: %v", err)
-    }
-    return nil
-}
-
-// Get a token from Redis
-func (s *SpotifyService) retrieveToken(tokenKind, userID string) (string, error) {
-    token, err := s.AppContext.RedisClient.Get(context.Background(), fmt.Sprintf("spotify%sToken:%s", tokenKind, userID)).Result()
-    // Token not found
-    if err == redis.Nil {
-        return "", nil
-    } else if err != nil {
-        return "", err
-    }
-    return token, nil
-}
-
-// Store a token in Redis
-func (s *SpotifyService) setToken(tokenKind, userID, token string, expiresIn int) error {
-    var expiration time.Duration
-    if tokenKind == "Access" {
-        expiration = time.Duration(expiresIn) * time.Second
-    } else if tokenKind == "Refresh" {
-        expiration = time.Hour * 720 // one month
-    }
-
-    err := s.AppContext.RedisClient.Set(context.Background(), fmt.Sprintf("spotify%sToken:%s", tokenKind, userID), token, expiration).Err()
-    if err != nil {
-        return fmt.Errorf("error storing the access token: %v", err)
-    }
-    return nil
-}
-
-// Attempts to get a valid access token or sends notice that the user must reauthenticate
-func (s *SpotifyService) getValidAccessToken(userID string) (string, error) {
-    // Try to get an access token directly from Redis first 
-    accessToken, err := s.retrieveToken("Access", userID)
-    if err == redis.Nil {
-        log.Println("Access token not found in Redis, requesting a new one.")
-    } else if err != nil {
-        log.Printf("Failed to retrieve Spotify API Access Token: %v", err)
-        return "", err
-    } else {
-        isExpired, err := utils.IsAccessTokenExpired(s.AppContext, "spotifyAccessToken:"+userID)
-        if err != nil {
-            log.Printf("Failed to check token freshness: %v", err)
-            return "", err
-        }
-        if !isExpired {
-            // The token is valid and not expired
-            return accessToken, nil
-        }
-    }
-    // If the code reaches here, it means the access token was either not found, expired, or some error occurred
-    refreshToken, err := s.retrieveToken("Refresh", userID)
-    if err == redis.Nil {
-        if err := s.HandleLogout(userID); err != nil {
-            log.Printf("Error handling forced logout for user %s: %v", userID, err)
-        }
-        return "", fmt.Errorf("user must reauthenticate with Spotify")
-    } else if err != nil {
-        log.Printf("failed to retrieve Spotify API Refresh Token: %v", err)
-        return "", err
-    } else {
-        isExpired, err := utils.IsAccessTokenExpired(s.AppContext, "spotifyRefreshToken:"+userID)
-        if err != nil {
-            log.Printf("Failed to check token freshness: %v", err)
-            return "", err
-        }
-        // Use valid refresh token to request a new access token from Spotify
-        if !isExpired {
-            payload := url.Values{}
-            payload.Set("grant_type", "refresh_token")
-            payload.Set("refresh_token", refreshToken)
-            payload.Set("client_id", s.AppContext.EnvConfig.SpotifyClientID)
-
-            tokenResponse, err := s.SpotifyClient.RequestToken(payload)
-            if err != nil {
-                return "", fmt.Errorf("error requesting access token from Spotify: %v", err)
-            }
-            if tokenResponse.AccessToken == "" {
-                return "", errors.New("empty access token")
-            }
-
-            if err := s.setToken("Access", userID, tokenResponse.AccessToken, tokenResponse.ExpiresIn); err != nil {
-                return "", fmt.Errorf("error storing access token in Redis: %v", err)
-            }
-            if err := s.setToken("Refresh", userID, tokenResponse.RefreshToken, 0); err != nil {
-                return "", fmt.Errorf("error storing refresh token in Redis: %v", err)
-            }
-            // Successfully requested a new access token from Spotify using the refresh token
-            return tokenResponse.AccessToken, nil
-        } else {
-            if err := s.HandleLogout(userID); err != nil {
-                log.Printf("Error handling forced logout for user %s: %v", userID, err)
-            }
-            return "", fmt.Errorf("user must reauthenticate with Spotify")
-        }
-    }
-}
-
-// Delete Spotify access and refresh tokens from Redis
-func (s *SpotifyService) ClearTokens(userID string) error {
-    _, err := s.AppContext.RedisClient.Del(context.Background(), "spotifyAccessToken:" + userID).Result()
-    if err != nil {
-        return fmt.Errorf("error deleting the access token: %v", err)
-    }
-    _, err = s.AppContext.RedisClient.Del(context.Background(), "spotifyRefreshToken:" + userID).Result()
-    if err != nil {
-        return fmt.Errorf("error deleting the refresh token: %v", err)
-    }
-    return nil
-}
-
 // Wrapper service function for GetCurrentUserProfile client function
 func (s *SpotifyService) GetCurrentUserProfile(userID string) (SpotifyUserProfile, error) {
-    accessToken, err := s.getValidAccessToken(userID)
+    params := utils.GetValidAccessTokenParams{
+        UserID: userID, 
+        Party: "spotify", 
+        Service: s.SpotifyClient,
+        AppCtx: *s.AppContext,
+        Updater: s.Auth0Service,
+    }
+    accessToken, err := utils.GetValidAccessToken(params)
     if err != nil {
+        log.Printf("error getting a valid spotify access token: %v", err)
         return SpotifyUserProfile{}, err
     }
     return s.SpotifyClient.GetCurrentUserProfile(accessToken)
@@ -247,7 +140,14 @@ func (s *SpotifyService) GetCurrentUserProfile(userID string) (SpotifyUserProfil
 
 // Wrapper service function for GetCurrentUserPlaylists client function
 func (s *SpotifyService) GetCurrentUserPlaylists(userID string, limit, offset int) (SpotifyPlaylistsResponse, error) {
-    accessToken, err := s.getValidAccessToken(userID)
+    params := utils.GetValidAccessTokenParams{
+        UserID: userID, 
+        Party: "spotify", 
+        Service: s.SpotifyClient,
+        AppCtx: *s.AppContext,
+        Updater: s.Auth0Service,
+    }
+    accessToken, err := utils.GetValidAccessToken(params)
     if err != nil {
         return SpotifyPlaylistsResponse{}, err
     }
@@ -256,7 +156,14 @@ func (s *SpotifyService) GetCurrentUserPlaylists(userID string, limit, offset in
 
 // Wrapper service function for GetPlaylistTracks client function
 func (s *SpotifyService) GetPlaylistTracks(userID, playlistID string, limit, offset int) (SpotifyPlaylistTracksResponse, error) {
-    accessToken, err := s.getValidAccessToken(userID)
+    params := utils.GetValidAccessTokenParams{
+        UserID: userID, 
+        Party: "spotify", 
+        Service: s.SpotifyClient,
+        AppCtx: *s.AppContext,
+        Updater: s.Auth0Service,
+    }
+    accessToken, err := utils.GetValidAccessToken(params)
     if err != nil {
         return SpotifyPlaylistTracksResponse{}, err
     }
@@ -265,7 +172,14 @@ func (s *SpotifyService) GetPlaylistTracks(userID, playlistID string, limit, off
 
 // Wrapper service function for CreatePlaylist client function
 func (s *SpotifyService) CreatePlaylist(userID, spotifyUserID string, payload CreatePlaylistPayload) ([]byte, error) {
-    accessToken, err := s.getValidAccessToken(userID)
+    params := utils.GetValidAccessTokenParams{
+        UserID: userID, 
+        Party: "spotify", 
+        Service: s.SpotifyClient,
+        AppCtx: *s.AppContext,
+        Updater: s.Auth0Service,
+    }
+    accessToken, err := utils.GetValidAccessToken(params)
     if err != nil {
         return nil, err
     }

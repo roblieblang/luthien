@@ -3,9 +3,12 @@ package spotify
 import (
 	"bytes"
 	"encoding/json"
+    "encoding/base64"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
+    "strings"
 	"net/url"
 
 	"github.com/roblieblang/luthien/backend/internal/utils"
@@ -17,14 +20,6 @@ import (
 
 type SpotifyClient struct {
     AppContext *utils.AppContext
-}
-
-type SpotifyTokenResponse struct {
-    AccessToken  string `json:"access_token"`
-    TokenType    string `json:"token_type"`
-    Scope        string `json:"scope"`
-    ExpiresIn    int    `json:"expires_in"`
-    RefreshToken string `json:"refresh_token"`
 }
 
 type SpotifyUserProfile struct {
@@ -162,17 +157,49 @@ func NewSpotifyClient(appCtx *utils.AppContext) *SpotifyClient {
 }
 
 // Requests a new access token from Spotify
-func (c *SpotifyClient) RequestToken(payload url.Values) (SpotifyTokenResponse, error) {
-    resp, err := http.PostForm("https://accounts.spotify.com/api/token", payload)
+func (c *SpotifyClient) RequestToken(payload url.Values) (utils.TokenResponse, error) {
+    client := &http.Client{}
+    req, err := http.NewRequest("POST", "https://accounts.spotify.com/api/token", strings.NewReader(payload.Encode()))
     if err != nil {
-        return SpotifyTokenResponse{}, err
+        log.Printf("Error creating request for Spotify token: %v\n", err)
+        return utils.TokenResponse{}, err
+    }
+
+    // Add Authorization header if this is a refresh token request
+    if payload.Get("grant_type") == "refresh_token" {
+        authHeaderVal := base64.StdEncoding.EncodeToString([]byte(c.AppContext.EnvConfig.SpotifyClientID + ":" + c.AppContext.EnvConfig.SpotifyClientSecret))
+        req.Header.Add("Authorization", "Basic "+authHeaderVal)
+    }
+
+    req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+
+    resp, err := client.Do(req)
+
+    if resp.StatusCode != http.StatusOK {
+        var errorResponse struct {
+            Error            string `json:"error"`
+            ErrorDescription string `json:"error_description"`
+        }
+        if decodeErr := json.NewDecoder(resp.Body).Decode(&errorResponse); decodeErr == nil {
+            log.Printf("Spotify API error: %s - %s\n", errorResponse.Error, errorResponse.ErrorDescription)
+        } else {
+            log.Printf("Failed to decode Spotify error response: %v\n", decodeErr)
+        }
+        return utils.TokenResponse{}, fmt.Errorf("spotify API request failed: %s", resp.Status)
+    }
+
+    if err != nil {
+        log.Printf("Error requesting token from Spotify: %v\n", err)
+        return utils.TokenResponse{}, err
     }
     defer resp.Body.Close()
-
-    var tokenResponse SpotifyTokenResponse
+    
+    var tokenResponse utils.TokenResponse
     if err := json.NewDecoder(resp.Body).Decode(&tokenResponse); err != nil {
-        return SpotifyTokenResponse{}, err
+        log.Printf("Error reading Spotify token response: %v\n", err)
+        return utils.TokenResponse{}, err
     }
+
     return tokenResponse, nil
 }
 
@@ -333,6 +360,9 @@ func (c *SpotifyClient) CreatePlaylist(accessToken, spotifyUserID string, playli
 
 /* YOUTUBE TO SPOTIFY CONVERSION FLOW */
 // 1. Get ISRC of all items in YouTube playlist (or similar identifier, maybe just combination of artist, album, title)
+//      - Can get ISRC with MusicBrainz API by searching for a recording with a title that matches the YouTube video title
+//      - https://musicbrainz.org/doc/MusicBrainz_API
+//      - This might be overkill, so maybe just do a simple search with cleaned video titles and see how that goes
 // 2. Use ISRC of each playlist item to find the equivalent item on Spotify and get its Spotify URI
 //    using GetURIWithISRC
 // 3. Assemble all URIs for the playlist-in-conversion into an array of strings

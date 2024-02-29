@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/roblieblang/luthien/backend/internal/utils"
 )
 
 // Parses incoming HTTP requests for parameters, payloads, headers
@@ -99,7 +100,12 @@ func (h *SpotifyHandler) LogoutHandler(c *gin.Context) {
         return
     }
 
-    if err := h.spotifyService.HandleLogout(userID); err != nil {
+    clearTokenParams := utils.ClearTokensParams{
+        Party: "spotify", 
+        UserID: userID,
+        AppCtx: *h.spotifyService.AppContext,
+    }
+    if err := utils.HandleLogout(h.spotifyService.Auth0Service, clearTokenParams); err != nil {
         c.JSON(http.StatusInternalServerError, gin.H{"error": err})
         return
     }
@@ -118,6 +124,7 @@ func (h *SpotifyHandler) GetCurrentUserProfileHandler(c *gin.Context) {
     userProfile, err := h.spotifyService.GetCurrentUserProfile(userID) 
     if err != nil {
         c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+        log.Printf("error retrieving Spotify profile: %v", err)
         return
     }
 

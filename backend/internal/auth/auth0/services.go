@@ -2,7 +2,6 @@ package auth0
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"time"
 
@@ -23,7 +22,7 @@ func NewAuth0Service(auth0Client *Auth0Client, appCtx *utils.AppContext) *Auth0S
 }
 
 // Stores an Auth0 Management API access token in Redis
-func (s *Auth0Service) storeAuth0Token(tokenResponse Auth0TokenResponse) error{
+func (s *Auth0Service) storeAuth0Token(tokenResponse utils.TokenResponse) error{
     err := s.AppContext.RedisClient.Set(context.Background(), "auth0ManagementAPIAccessToken", tokenResponse.AccessToken, time.Duration(tokenResponse.ExpiresIn) * time.Second).Err()
     if err != nil {
         log.Printf("There was an issue storing the Auth0 Management API Access Token: %v", err)
@@ -80,7 +79,7 @@ func (s *Auth0Service) getValidAccessToken() (string, error) {
         return "", err
     } else {
         // If there was no error and the token exists, check for expiration
-        isExpired, err := utils.IsAccessTokenExpired(s.AppContext, "auth0ManagementAPIAccessToken")
+        isExpired, err := utils.IsAccessTokenExpired(*s.AppContext, "auth0ManagementAPIAccessToken")
         if err != nil {
             log.Printf("Failed to check token freshness: %v", err)
             return "", err
@@ -106,16 +105,6 @@ func (s *Auth0Service) getValidAccessToken() (string, error) {
     return tokenResponse.AccessToken, nil
 }
 
-// Extracts a Google API access token from an Auth0UserMetadata struct
-func (s *Auth0Service) extractGoogleAccessToken(userMetadata Auth0UserMetadata) (string, int, error) {
-    for _, identity := range userMetadata.Identities {
-        if identity.Provider == "google-oauth2" {
-            return identity.AccessToken, identity.ExpiresIn, nil
-        }
-    }
-    return "", 0, fmt.Errorf("google access token not found")
-}
-
 // Wrapper service function for GetUserMetadata client function that extracts and stores Google access token from response
 func (s *Auth0Service) GetUserMetadata(userID string) (Auth0UserMetadata, error) {
     accessToken, err := s.getValidAccessToken()
@@ -125,14 +114,6 @@ func (s *Auth0Service) GetUserMetadata(userID string) (Auth0UserMetadata, error)
     userMetadata, err := s.Auth0Client.GetUserMetadata(accessToken, userID)
     if err != nil {
         return Auth0UserMetadata{}, err
-    }
-    googleAccessToken, expiresIn, err := s.extractGoogleAccessToken(userMetadata)
-    if err != nil {
-        return userMetadata, err
-    }
-
-    if err := s.storeGoogleToken(userID, googleAccessToken, expiresIn); err != nil {
-        return userMetadata, err
     }
 
     return userMetadata, nil

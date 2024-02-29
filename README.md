@@ -2,7 +2,7 @@
 
 ## Overview
 
-Playlist conversion tool for Spotify and Youtube. There and back again.
+Playlist conversion tool for Spotify and YouTube. There and back again.
 
 ## Requirements
 
