@@ -112,12 +112,8 @@ func (c *YouTubeClient) GetPlaylistItems(playlistID, accessToken string) (YouTub
 
     var items []PlaylistItem
     for _, item := range resp.Items {
-        fmt.Printf("playlist item: %v\n", item)
-        var thumbnailURL string
-        // Check if the thumbnail and the standard quality thumbnail exist before accessing the URL
-        if item.Snippet.Thumbnails != nil && item.Snippet.Thumbnails.Standard != nil {
-            thumbnailURL = item.Snippet.Thumbnails.Standard.Url
-        }
+        thumbnailURL := getBestAvailableThumbnailURL(item.Snippet.Thumbnails)
+
         items = append(items, PlaylistItem{
             ID:          item.Id,
             Title:       item.Snippet.Title,
@@ -128,6 +124,22 @@ func (c *YouTubeClient) GetPlaylistItems(playlistID, accessToken string) (YouTub
     }
 
     return YouTubePlaylistItemsResponse{Items: items}, nil
+}
+
+// Helper function to determine the best available thumbnail URL
+func getBestAvailableThumbnailURL(thumbnails *youtube.ThumbnailDetails) string {
+    if thumbnails.Maxres != nil {
+        return thumbnails.Maxres.Url
+    } else if thumbnails.Standard != nil {
+        return thumbnails.Standard.Url
+    } else if thumbnails.High != nil {
+        return thumbnails.High.Url
+    } else if thumbnails.Medium != nil {
+        return thumbnails.Medium.Url
+    } else if thumbnails.Default != nil {
+        return thumbnails.Default.Url
+    }
+    return ""
 }
 
 

@@ -1,11 +1,10 @@
-import { useEffect, useState } from "react";
-import { useUser } from "../../contexts/userContext";
+import he from "he";
+import { useState } from "react";
 import LinkButton from "../general/buttons/linkButton";
 import TrackList from "../trackList";
 
 export default function YouTubePlaylist({ playlist }) {
   const [showTracks, setShowTracks] = useState(false);
-  const { userID, googleUserID } = useUser();
 
   const toggleTracks = () => {
     setShowTracks(!showTracks);
@@ -21,10 +20,9 @@ export default function YouTubePlaylist({ playlist }) {
             className="h-16 w-16 object-cover"
           />
         )}
-        <h3 className="text-base font-medium">{playlist.name}</h3>
+        <h3 className="text-base font-medium">{he.decode(playlist.title)}</h3>
         <p>{playlist.videosCount} tracks</p>
-        {/* TODO: will need to escape certain characters if keeping the description */}
-        <p>{playlist.description || ""}</p> 
+        <p>{he.decode(playlist.description) || ""}</p>
       </div>
       <div className="ml-auto flex flex-col justify-between">
         <LinkButton
@@ -42,7 +40,9 @@ export default function YouTubePlaylist({ playlist }) {
             <LinkButton to="" text="Convert" />
           </>
         )}
-        {showTracks && <TrackList playlistID={playlist.id} />}
+        {showTracks && (
+          <TrackList playlistID={playlist.id} sourceType={"youtube"} />
+        )}
       </div>
     </div>
   );

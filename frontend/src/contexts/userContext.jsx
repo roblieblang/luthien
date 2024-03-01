@@ -43,7 +43,7 @@ export const UserProvider = ({ children }) => {
           })
           .catch((error) => {
             console.error("Fetching error:", error);
-            // TODO: logout({ returnTo: window.location.origin });
+            logout({ returnTo: window.location.origin });
           });
       }
     },

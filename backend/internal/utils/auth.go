@@ -202,6 +202,7 @@ func GetValidAccessToken(params GetValidAccessTokenParams) (string, error) {
         AppCtx: params.AppCtx,
     }
     if err != nil {
+        log.Printf("error occurred while attempting to retrieve an access token: %v", err)
         if err := HandleLogout(params.Updater, clearTokenParams); err != nil {
             return "", fmt.Errorf("error logging out user after failed token retrieval")
         }

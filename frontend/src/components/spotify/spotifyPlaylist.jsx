@@ -1,3 +1,4 @@
+import he from "he";
 import { useState } from "react";
 import LinkButton from "../general/buttons/linkButton";
 import TrackList from "../trackList";
@@ -19,11 +20,10 @@ export default function SpotifyPlaylist({ playlist }) {
             className="h-16 w-16 object-cover"
           />
         )}
-        <h3 className="text-base font-medium">{playlist.name}</h3>
+        <h3 className="text-base font-medium">{he.decode(playlist.name)}</h3>
         <p>{playlist.tracks.total} tracks</p>
-        <p>Owner: {playlist.owner.display_name}</p>
-        {/* TODO: will need to escape certain characters if keeping the description */}
-        <p>{playlist.description || ""}</p>
+        <p>Owner: {he.decode(playlist.owner.display_name)}</p>
+        <p>{he.decode(playlist.description) || ""}</p>
       </div>
       <div className="ml-auto flex flex-col justify-between">
         <LinkButton
@@ -41,7 +41,9 @@ export default function SpotifyPlaylist({ playlist }) {
             <LinkButton to="" text="Convert" />
           </>
         )}
-        {showTracks && <TrackList playlistID={playlist.id} />}
+        {showTracks && (
+          <TrackList playlistID={playlist.id} sourceType={"spotify"} />
+        )}
       </div>
     </div>
   );
