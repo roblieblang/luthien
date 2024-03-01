@@ -44,29 +44,6 @@ func (s *Auth0Service) retrieveAuth0Token() (string, error){
     return accessToken, nil
 }
 
-// Stores a Google APi access token in Redis
-func (s *Auth0Service) storeGoogleToken(userID, googleToken string, expiresIn int) error {
-    err := s.AppContext.RedisClient.Set(context.Background(), "googleAPIAccessToken:"+userID, googleToken, time.Duration(expiresIn) * time.Second).Err()
-    if err != nil {
-        log.Printf("There was an issue storing the Google API Access Token: %v", err)
-        return err
-    }
-    return nil
-}
-
-// Retrieves an existing Google API access token from Redis
-func (s *Auth0Service) RetrieveGoogleToken(userID string) (string, error){
-	accessToken, err := s.AppContext.RedisClient.Get(context.Background(), "googleAPIAccessToken:"+userID).Result()
-    // Token not found, not an error
-    if err == redis.Nil {
-        return "", nil
-    } else if err != nil {
-        log.Printf("Failed to retrieve Google API Access Token: %v", err)
-        return "", err
-    }
-    return accessToken, nil
-}
-
 // Helper function for getting a valid access token
 func (s *Auth0Service) getValidAccessToken() (string, error) {
     accessToken, err := s.retrieveAuth0Token()
@@ -79,7 +56,7 @@ func (s *Auth0Service) getValidAccessToken() (string, error) {
         return "", err
     } else {
         // If there was no error and the token exists, check for expiration
-        isExpired, err := utils.IsAccessTokenExpired(*s.AppContext, "auth0ManagementAPIAccessToken")
+        isExpired, err := utils.IsAccessTokenExpired(*s.AppContext, "auth0ManagementAPIAccessToken", accessToken)
         if err != nil {
             log.Printf("Failed to check token freshness: %v", err)
             return "", err

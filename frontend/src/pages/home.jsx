@@ -11,7 +11,7 @@ import { useUser } from "../contexts/userContext";
 
 export default function Home() {
   const { isAuthenticated } = useAuth0();
-  const { spotifyAuthStatus } = useUser();
+  const { spotifyAuthStatus, youTubeAuthStatus } = useUser();
 
   return (
     <div className="flex flex-col items-center justify-center text-center">
@@ -25,7 +25,7 @@ export default function Home() {
             >
               <IoMdPerson size={35} />
             </Link>
-            {spotifyAuthStatus && (
+            {(spotifyAuthStatus || youTubeAuthStatus) && (
               <Link
                 className="rounded-md bg-yellow-400 border-4 border-black hover:bg-yellow-600"
                 to="/music"
