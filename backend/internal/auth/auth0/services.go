@@ -79,7 +79,7 @@ func (s *Auth0Service) getValidAccessToken() (string, error) {
         return "", err
     } else {
         // If there was no error and the token exists, check for expiration
-        isExpired, err := utils.IsAccessTokenExpired(*s.AppContext, "auth0ManagementAPIAccessToken")
+        isExpired, err := utils.IsAccessTokenExpired(*s.AppContext, "auth0ManagementAPIAccessToken", accessToken)
         if err != nil {
             log.Printf("Failed to check token freshness: %v", err)
             return "", err
