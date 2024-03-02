@@ -182,7 +182,7 @@ func (c *Auth0Client) UpdateUserMetadata(accessToken, userID string, metadata ma
     }
 
     if res.StatusCode >= 400 {
-		log.Printf("Received error status from Auth0: %s", string(body))
+		log.Printf("Received error status from Auth0: %s. Error: %v", string(body), err)
         return err
     }
 

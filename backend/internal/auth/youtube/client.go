@@ -142,8 +142,43 @@ func getBestAvailableThumbnailURL(thumbnails *youtube.ThumbnailDetails) string {
     return ""
 }
 
+type CreatePlaylistPayload struct {
+    Title           string `json:"title"`
+    Description     string `json:"description,omitempty"`
+    PrivacyStatus   string `json:"privacyStatus,omitempty"` // "public", "private", or "unlisted"
+}
 
-// TODO: implement add/create/insert playlist
+// Creates a new YouTube playlist
+func (c *YouTubeClient) CreatePlaylist(accessToken string, payload CreatePlaylistPayload) (*youtube.Playlist, error) {
+    token := &oauth2.Token{AccessToken: accessToken}
+    tokenSource := oauth2.StaticTokenSource(token)
+    httpClient := oauth2.NewClient(context.Background(), tokenSource)
+
+    service, err := youtube.NewService(context.Background(), option.WithHTTPClient(httpClient))
+    if err != nil {
+        return nil, fmt.Errorf("error creating YouTube service: %v", err)
+    }
+
+    // Create the playlist object to be inserted
+    playlist := &youtube.Playlist{
+        Snippet: &youtube.PlaylistSnippet{
+            Title:       payload.Title,
+            Description: payload.Description,
+        },
+        Status: &youtube.PlaylistStatus{
+            PrivacyStatus: payload.PrivacyStatus,
+        },
+    }
+
+    // Call the YouTube Data API to insert the playlist
+    call := service.Playlists.Insert([]string{"snippet", "status"}, playlist)
+    createdPlaylist, err := call.Do()
+    if err != nil {
+        return nil, fmt.Errorf("error creating YouTube playlist: %v", err)
+    }
+
+    return createdPlaylist, nil
+}
 
 // TODO: implement add/insert a playlist item
 

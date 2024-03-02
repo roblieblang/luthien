@@ -87,6 +87,7 @@ func main() {
     // YouTube data endpoints
     router.GET("/youtube/current-user-playlists", youTubeHandler.GetCurrentUserPlaylistsHandler)
     router.GET("/youtube/playlist-tracks", youTubeHandler.GetPlaylistItemsHandler)
+    router.POST("/youtube/create-playlist", youTubeHandler.CreatePlaylistHandler)
 
 
     router.GET("/", func(c *gin.Context) {

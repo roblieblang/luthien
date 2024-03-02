@@ -149,3 +149,25 @@ func (h *YouTubeHandler) GetPlaylistItemsHandler(c *gin.Context) {
 
 	c.JSON(http.StatusOK, userPlaylists)
 }
+
+type CreatePlaylistBody struct {
+    UserID        string                `json:"userId"`
+    Payload       CreatePlaylistPayload `json:"payload"`
+}
+
+// Handles the creation of a new playlist 
+func(h *YouTubeHandler) CreatePlaylistHandler(c *gin.Context) {
+    var playlistData CreatePlaylistBody
+    if err := c.BindJSON(&playlistData); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
+        return
+    }
+
+    _, err := h.youTubeService.CreatePlaylist(playlistData.UserID, playlistData.Payload)
+    if err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "error creating playlist"})
+        return
+    }
+
+    c.JSON(http.StatusOK, gin.H{"message": "Successfully created new playlist"})
+}

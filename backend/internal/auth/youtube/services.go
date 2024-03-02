@@ -8,6 +8,7 @@ import (
 
 	"github.com/roblieblang/luthien/backend/internal/auth/auth0"
 	"github.com/roblieblang/luthien/backend/internal/utils"
+	"google.golang.org/api/youtube/v3"
 )
 
 type YouTubeService struct {
@@ -135,4 +136,21 @@ func (s *YouTubeService) GetPlaylistItems(userID, playlistID string)  (YouTubePl
         return YouTubePlaylistItemsResponse{}, err
     }
     return s.YouTubeClient.GetPlaylistItems(playlistID, accessToken)
+}
+
+// Wrapper service function for CreatePlaylist client function
+func (s *YouTubeService) CreatePlaylist(userID string, payload CreatePlaylistPayload) (*youtube.Playlist, error) {
+    params := utils.GetValidAccessTokenParams{
+        UserID: userID, 
+        Party: "google", 
+        Service: s.YouTubeClient,
+        AppCtx: *s.YouTubeClient.AppContext,
+        Updater: s.Auth0Service,
+    }
+    accessToken, err := utils.GetValidAccessToken(params)
+    fmt.Printf("YouTubeService.CreatePlaylist() access token: %s\n", accessToken)
+    if err != nil {
+        return nil, err
+    }
+    return s.YouTubeClient.CreatePlaylist(accessToken, payload)
 }
