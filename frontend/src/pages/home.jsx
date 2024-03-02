@@ -15,30 +15,34 @@ export default function Home() {
 
   return (
     <div className="flex flex-col items-center justify-center text-center">
-      <BasicHeading text="Home Page" />
-      {isAuthenticated && (
-        <>
-          <div className="flex flex-row space-x-2">
-            <Link
-              className="rounded-md bg-yellow-400 border-4 border-black hover:bg-yellow-600"
-              to="/profile"
-            >
-              <IoMdPerson size={35} />
-            </Link>
-            {(spotifyAuthStatus || youTubeAuthStatus) && (
+      <title className="absolute inset-0 flex flex-col items-center justify-center mb-10">
+        <BasicHeading text="A Playlist Conversion Tool." />
+      </title>
+      <div className="absolute inset-0 flex flex-col items-center justify-center mt-10">
+        {isAuthenticated && (
+          <>
+            <div className="absolute top-0 left-0 p-4 flex flex-row space-x-2">
               <Link
-                className="rounded-md bg-yellow-400 border-4 border-black hover:bg-yellow-600"
-                to="/music"
+                className="bg-transparent"
+                to="/profile"
               >
-                <MdLibraryMusic size={35} />
+                <IoMdPerson size={35} />
               </Link>
-            )}
-          </div>
-          <YouTubeAuthButton />
-          <SpotifyAuthButton />
-        </>
-      )}
-      <AuthenticationButton />
+              {(spotifyAuthStatus || youTubeAuthStatus) && (
+                <Link
+                  className="bg-transparent"
+                  to="/music"
+                >
+                  <MdLibraryMusic size={35} />
+                </Link>
+              )}
+            </div>
+            <YouTubeAuthButton />
+            <SpotifyAuthButton />
+          </>
+        )}
+        <AuthenticationButton />
+      </div>
     </div>
   );
 }

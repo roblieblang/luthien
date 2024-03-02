@@ -42,14 +42,14 @@ export default function SpotifyAuthButton() {
     <div>
       {spotifyAuthStatus ? (
         <button
-          className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 my-5 rounded-full border-2 border-black"
+          className="bg-customHeadline hover:bg-customButton text-customStroke hover:text-slate-800 font-bold py-1 px-2 my-6 rounded-md border border-black"
           onClick={handleLogout}
         >
           Log Out of Spotify
         </button>
       ) : (
         <button
-          className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 my-5 rounded-full border-2 border-black"
+          className="bg-customHeadline hover:bg-customButton text-customStroke hover:text-slate-800 font-bold py-1 px-2 my-6 rounded-md border border-black"
           onClick={handleLogin}
         >
           Connect Spotify Account
