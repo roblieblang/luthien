@@ -185,3 +185,19 @@ func (s *SpotifyService) CreatePlaylist(userID, spotifyUserID string, payload Cr
     }
     return s.SpotifyClient.CreatePlaylist(accessToken, spotifyUserID, payload)
 }
+
+// Wrapper service function for AddItemsToPlaylist client function
+func (s *SpotifyService) AddItemsToPlaylist(userID, playlistID string, payload AddItemsToPlaylistPayload) error {
+    params := utils.GetValidAccessTokenParams{
+        UserID: userID, 
+        Party: "spotify", 
+        Service: s.SpotifyClient,
+        AppCtx: *s.AppContext,
+        Updater: s.Auth0Service,
+    }
+    accessToken, err := utils.GetValidAccessToken(params)
+    if err != nil {
+        return err
+    }
+    return s.SpotifyClient.AddItemsToPlaylist(accessToken, playlistID, payload)
+}

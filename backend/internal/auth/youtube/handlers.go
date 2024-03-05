@@ -72,7 +72,6 @@ func (h *YouTubeHandler) CallbackHandler(c *gin.Context) {
     }
 	log.Printf("\ncode: %s, userID: %s, sessionID: %s\n", req.Code, req.UserID, req.SessionID)
     if req.Code == "" || req.UserID == "" || req.SessionID == "" {
-		log.Printf("\n\n\nmissing something. SHIT!")
         c.JSON(http.StatusBadRequest, gin.H{"error": "Missing required fields"})
         return
     }
@@ -90,7 +89,7 @@ func (h *YouTubeHandler) CallbackHandler(c *gin.Context) {
     c.JSON(http.StatusOK, gin.H{"redirectURL": "http://localhost:5173/"})
 }
 
-// Checks Spotify authentication status for a specific user
+// Checks YouTube authentication status for a specific user
 // TODO: could we cache the result of this handler?
 func (h *YouTubeHandler) CheckAuthHandler(c *gin.Context) {
     userID := c.Query("userID")
@@ -119,6 +118,10 @@ func (h *YouTubeHandler) GetCurrentUserPlaylistsHandler(c *gin.Context) {
 	userPlaylists, err := h.youTubeService.GetCurrentUserPlaylists(userID)
 	if err != nil {
 		log.Printf("Error retrieving YouTube playlists: %v", err)
+        if strings.Contains(err.Error(), "reauthentication required") {
+            c.JSON(http.StatusUnauthorized, gin.H{"error": "authentication_required", "message": "Please reauthenticate with YouTube (Google)."})
+            return
+        }
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve user playlists"})
 		return
 	}
@@ -143,6 +146,10 @@ func (h *YouTubeHandler) GetPlaylistItemsHandler(c *gin.Context) {
 	userPlaylists, err := h.youTubeService.GetPlaylistItems(userID, playlistID)
 	if err != nil {
 		log.Printf("Error retrieving YouTube playlist items: %v", err)
+        if strings.Contains(err.Error(), "reauthentication required") {
+            c.JSON(http.StatusUnauthorized, gin.H{"error": "authentication_required", "message": "Please reauthenticate with YouTube (Google)."})
+            return
+        }
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve playlist items"})
 		return
 	}
@@ -163,11 +170,48 @@ func(h *YouTubeHandler) CreatePlaylistHandler(c *gin.Context) {
         return
     }
 
+    if playlistData.UserID == "" {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "user Id is required to create a new playlist"})
+        return
+    }
     _, err := h.youTubeService.CreatePlaylist(playlistData.UserID, playlistData.Payload)
     if err != nil {
+        if strings.Contains(err.Error(), "reauthentication required") {
+            c.JSON(http.StatusUnauthorized, gin.H{"error": "authentication_required", "message": "Please reauthenticate with YouTube (Google)."})
+            return
+        }
         c.JSON(http.StatusBadRequest, gin.H{"error": "error creating playlist"})
         return
     }
 
     c.JSON(http.StatusOK, gin.H{"message": "Successfully created new playlist"})
+}
+
+type AddItemsToPlaylistBody struct {
+    UserID  string                     `json:"userId"`
+    Payload AddItemsToPlaylistPayload  `json:"payload"`
+}
+
+// Handles the insertion of multiple items into a YouTube playlist
+func(h *YouTubeHandler) AddItemsToPlaylistHandler(c *gin.Context) {
+    var addItemsData AddItemsToPlaylistBody
+    if err := c.BindJSON(&addItemsData); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
+        return
+    }
+    if addItemsData.UserID == "" {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "user Id is required to create a new playlist"})
+        return
+    }
+
+    if err := h.youTubeService.AddItemsToPlaylist(addItemsData.UserID, addItemsData.Payload); err != nil {
+        if strings.Contains(err.Error(), "reauthentication required") {
+            c.JSON(http.StatusUnauthorized, gin.H{"error": "authentication_required", "message": "Please reauthenticate with YouTube (Google)."})
+            return
+        }
+        c.JSON(http.StatusBadRequest, gin.H{"error": "error adding items to playlist"})
+        return
+    }
+
+    c.JSON(http.StatusOK, gin.H{"message": "Successfully added items to playlist"})
 }

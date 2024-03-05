@@ -1,6 +1,7 @@
 package spotify
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -123,8 +124,12 @@ func (h *SpotifyHandler) GetCurrentUserProfileHandler(c *gin.Context) {
 
     userProfile, err := h.spotifyService.GetCurrentUserProfile(userID) 
     if err != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{"error": err})
         log.Printf("error retrieving Spotify profile: %v", err)
+        if strings.Contains(err.Error(), "reauthentication required") {
+            c.JSON(http.StatusUnauthorized, gin.H{"error": "authentication_required", "message": "Please reauthenticate with Spotify."})
+            return
+        }
+        c.JSON(http.StatusInternalServerError, gin.H{"error": err})
         return
     }
 
@@ -157,6 +162,10 @@ func(h *SpotifyHandler) GetCurrentUserPlaylistsHandler(c *gin.Context) {
     
     userPlaylists, err := h.spotifyService.GetCurrentUserPlaylists(userID, limit, offset)
     if err != nil {
+        if strings.Contains(err.Error(), "reauthentication required") {
+            c.JSON(http.StatusUnauthorized, gin.H{"error": "authentication_required", "message": "Please reauthenticate with Spotify."})
+            return
+        }
         c.JSON(http.StatusInternalServerError, gin.H{"error": err})
         return
     }
@@ -195,6 +204,10 @@ func(h *SpotifyHandler) GetPlaylistTracksHandler(c *gin.Context) {
     
     playlistTracks, err := h.spotifyService.GetPlaylistTracks(userID, playlistID, limit, offset)
     if err != nil {
+        if strings.Contains(err.Error(), "reauthentication required") {
+            c.JSON(http.StatusUnauthorized, gin.H{"error": "authentication_required", "message": "Please reauthenticate with Spotify."})
+            return
+        }
         c.JSON(http.StatusInternalServerError, gin.H{"error": err})
         return
     }
@@ -212,9 +225,40 @@ func(h *SpotifyHandler) CreatePlaylistHandler(c *gin.Context) {
 
     _, err := h.spotifyService.CreatePlaylist(playlistData.UserID, playlistData.SpotifyUserID, playlistData.Payload)
     if err != nil {
+        if strings.Contains(err.Error(), "reauthentication required") {
+            c.JSON(http.StatusUnauthorized, gin.H{"error": "authentication_required", "message": "Please reauthenticate with Spotify."})
+            return
+        }
         c.JSON(http.StatusBadRequest, gin.H{"error": "error creating playlist"})
         return
     }
 
     c.JSON(http.StatusOK, gin.H{"message": "Successfully created new playlist"})
+}
+
+type AddItemsToPlaylistBody struct {
+    UserID     string                    `json:"userId"`
+    PlaylistID string                    `json:"spotifyPlaylistId"`
+    Payload    AddItemsToPlaylistPayload `json:"payload"`
+}
+
+// Handles the insertion of items into an existing playlist 
+func(h *SpotifyHandler) AddItemsToPlaylistHandler(c *gin.Context) {
+    var playlistItemsData AddItemsToPlaylistBody
+    if err := c.BindJSON(&playlistItemsData); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
+        return
+    }
+
+    err := h.spotifyService.AddItemsToPlaylist(playlistItemsData.UserID, playlistItemsData.PlaylistID, playlistItemsData.Payload)
+    if err != nil {
+        if strings.Contains(err.Error(), "reauthentication required") {
+            c.JSON(http.StatusUnauthorized, gin.H{"error": "authentication_required", "message": "Please reauthenticate with Spotify."})
+            return
+        }
+        c.JSON(http.StatusBadRequest, gin.H{"error": "error creating playlist"})
+        return
+    }
+
+    c.JSON(http.StatusOK, gin.H{"message": fmt.Sprintf("Successfully add items to playlist with ID: %s", playlistItemsData.PlaylistID)})
 }

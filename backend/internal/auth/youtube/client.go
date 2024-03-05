@@ -80,11 +80,13 @@ func (c *YouTubeClient) GetCurrentUserPlaylists(accessToken string) (YouTubePlay
 
     var playlists []Playlist
     for _, item := range resp.Items {
+        imageURL := getBestAvailableThumbnailURL(item.Snippet.Thumbnails)
+
         playlists = append(playlists, Playlist{
             ID:          item.Id,
             Title:       item.Snippet.Title,
             Description: item.Snippet.Description,
-            ImageURL:    item.Snippet.Thumbnails.Standard.Url,
+            ImageURL:    imageURL,
             VideosCount: item.ContentDetails.ItemCount,
         })
     }
@@ -115,11 +117,11 @@ func (c *YouTubeClient) GetPlaylistItems(playlistID, accessToken string) (YouTub
         thumbnailURL := getBestAvailableThumbnailURL(item.Snippet.Thumbnails)
 
         items = append(items, PlaylistItem{
-            ID:          item.Id,
-            Title:       item.Snippet.Title,
-            Description: item.Snippet.Description,
-            ThumbnailURL: thumbnailURL, // Use the safe variable instead
-            VideoID:     item.ContentDetails.VideoId,
+            ID:             item.Id,
+            Title:          item.Snippet.Title,
+            Description:    item.Snippet.Description,
+            ThumbnailURL:   thumbnailURL, // Use the safe variable instead
+            VideoID:        item.ContentDetails.VideoId,
         })
     }
 
@@ -128,6 +130,9 @@ func (c *YouTubeClient) GetPlaylistItems(playlistID, accessToken string) (YouTub
 
 // Helper function to determine the best available thumbnail URL
 func getBestAvailableThumbnailURL(thumbnails *youtube.ThumbnailDetails) string {
+    if thumbnails == nil {
+        return ""
+    }
     if thumbnails.Maxres != nil {
         return thumbnails.Maxres.Url
     } else if thumbnails.Standard != nil {
@@ -180,6 +185,40 @@ func (c *YouTubeClient) CreatePlaylist(accessToken string, payload CreatePlaylis
     return createdPlaylist, nil
 }
 
-// TODO: implement add/insert a playlist item
+type AddItemsToPlaylistPayload struct {
+    PlaylistID string   `json:"playlistId"`
+    VideoIDs   []string `json:"videoIds"`
+}
+
+// Adds items to an existing YouTube playlist
+func (c *YouTubeClient) AddItemsToPlaylist (accessToken string, payload AddItemsToPlaylistPayload) error {
+    token := &oauth2.Token{AccessToken: accessToken}
+    tokenSource := oauth2.StaticTokenSource(token)
+    httpClient := oauth2.NewClient(context.Background(), tokenSource)
+    
+    service, err := youtube.NewService(context.Background(), option.WithHTTPClient(httpClient))
+    if err != nil {
+        return fmt.Errorf("error creating YouTube service: %v", err)
+    }
+
+    for _, videoID := range payload.VideoIDs {
+        playlistItem := &youtube.PlaylistItem{
+            Snippet: &youtube.PlaylistItemSnippet{
+                PlaylistId: payload.PlaylistID,
+                ResourceId: &youtube.ResourceId{
+                    Kind:    "youtube#video",
+                    VideoId: videoID,
+                },
+            },
+        }
+        call := service.PlaylistItems.Insert([]string{"snippet"}, playlistItem)
+        _, err := call.Do()
+        if err != nil {
+            return fmt.Errorf("error adding item to YouTube playlist: %v", err)
+        }
+    }
+
+    return nil
+}
 
 // TODO: implement search for a video

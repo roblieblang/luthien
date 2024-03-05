@@ -358,6 +358,54 @@ func (c *SpotifyClient) CreatePlaylist(accessToken, spotifyUserID string, playli
     return body, nil
 }
 
+type AddItemsToPlaylistPayload struct {
+    ItemURIs []string   `json:"uris"` // TODO: handle fact that A maximum of 100 items can be added in one request
+    Position int        `json:"position"`
+}
+
+// TODO: implement 
+// Docs: https://developer.spotify.com/documentation/web-api/reference/add-tracks-to-playlist
+// Adds items to an existing Spotify playlist
+func (c *SpotifyClient) AddItemsToPlaylist(accessToken, playlistID string, addItemsPayload AddItemsToPlaylistPayload) error {
+    if len(addItemsPayload.ItemURIs) > 100 {
+        // TODO: something. perhaps this check should be done in the service layer?
+        return nil
+    }
+    // TODO: validate track URI strings. also done in service layer?
+
+    url := fmt.Sprintf("https://api.spotify.com/v1/playlists/%s/tracks", playlistID)
+
+    payload, err := json.Marshal(addItemsPayload)
+    if err != nil {
+        return fmt.Errorf("error marshaling payload: %w", err)
+	}
+
+    req, err := http.NewRequest("POST", url, bytes.NewBuffer(payload))
+    if err != nil {
+        return fmt.Errorf("error creating request %w", err)
+    }
+    req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", accessToken))
+    req.Header.Add("Content-Type", "application/json")
+
+    res, err := http.DefaultClient.Do(req)
+    if err != nil {
+        return fmt.Errorf("error executing request: %w", err)
+    }
+
+    defer res.Body.Close()
+
+    body, err := io.ReadAll(res.Body)
+    if err != nil {
+        return fmt.Errorf("error reading response body: %w", err)
+    }
+
+    if res.StatusCode >= 400 {
+        return fmt.Errorf("spotify API error (status code %d): %s", res.StatusCode, string(body))
+    }
+
+    return nil
+}
+
 /* YOUTUBE TO SPOTIFY CONVERSION FLOW */
 // 1. Get ISRC of all items in YouTube playlist (or similar identifier, maybe just combination of artist, album, title)
 //      - Can get ISRC with MusicBrainz API by searching for a recording with a title that matches the YouTube video title
@@ -371,17 +419,8 @@ func (c *SpotifyClient) CreatePlaylist(accessToken, spotifyUserID string, playli
 
 // TODO: implement
 // Docs: https://developer.spotify.com/documentation/web-api/reference/search
-// Searches for a specific Spotify track using an ISRC 
-// (will we need a fallback? e.g. combination of artist, album, track, year)
 func (c *SpotifyClient) GetURIWithISRC(accessToken, isrc string) (SpotifySearchResponse, error) {    
     return SpotifySearchResponse{}, nil
-}
-
-// TODO: implement 
-// Docs: https://developer.spotify.com/documentation/web-api/reference/add-tracks-to-playlist
-// Adds items to an existing Spotify playlist
-func (c *SpotifyClient) AddItemsToPlaylist(accessToken, playlistID string) error {
-    return nil
 }
 
 // TODO: Implement Update Playlist(?) 

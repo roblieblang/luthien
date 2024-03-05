@@ -72,7 +72,7 @@ func (s *YouTubeService) HandleCallback(code, userID, sessionID string) error {
     }
 
     params := utils.SetTokenParams{
-        TokenKind: "Access",
+        TokenKind: "access",
         Party: "google",
         UserID: userID, 
         Token: tokenResponse.AccessToken,
@@ -85,7 +85,7 @@ func (s *YouTubeService) HandleCallback(code, userID, sessionID string) error {
     }
 
     // This is an arbitrary expiry. utils.SetToken() handles refresh token expiration time
-    params.TokenKind = "Refresh"
+    params.TokenKind = "refresh"
     params.Token = tokenResponse.RefreshToken
     params.ExpiresIn = 0
     err = utils.SetToken(params) 
@@ -131,7 +131,7 @@ func (s *YouTubeService) GetPlaylistItems(userID, playlistID string)  (YouTubePl
         Updater: s.Auth0Service,
     }
     accessToken, err := utils.GetValidAccessToken(params)
-    fmt.Printf("\nGOOGLE Access TOken: %s\n", accessToken)
+    fmt.Printf("\nGoogle Access Token: %s\n", accessToken)
     if err != nil {
         return YouTubePlaylistItemsResponse{}, err
     }
@@ -153,4 +153,20 @@ func (s *YouTubeService) CreatePlaylist(userID string, payload CreatePlaylistPay
         return nil, err
     }
     return s.YouTubeClient.CreatePlaylist(accessToken, payload)
+}
+
+// Wrapper service function for AddItemsToPlaylist client function
+func (s *YouTubeService) AddItemsToPlaylist(userID string, payload AddItemsToPlaylistPayload) error {
+    params := utils.GetValidAccessTokenParams{
+        UserID: userID, 
+        Party: "google", 
+        Service: s.YouTubeClient,
+        AppCtx: *s.YouTubeClient.AppContext,
+        Updater: s.Auth0Service,
+    }
+    accessToken, err := utils.GetValidAccessToken(params)
+    if err != nil {
+        return err
+    }
+    return s.YouTubeClient.AddItemsToPlaylist(accessToken, payload)
 }
