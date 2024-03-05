@@ -18,7 +18,11 @@ const TrackList = ({ playlistID, sourceType }) => {
         fetch(url)
           .then((res) => {
             if (!res.ok) {
-              throw new Error("Response from server was not ok");
+              if (res.status === 401) {
+                window.location.href = `/?${sourceType}_session_expired=true`;
+                return;
+              }
+              throw new Error(`Failed to fetch tracks for ${sourceType} playlist ${playlistID}`);
             }
             return res.json();
           })

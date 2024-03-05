@@ -39,14 +39,19 @@ export default function UserPlaylists({ serviceType }) {
       fetch(api(apiOptions))
         .then((res) => {
           if (!res.ok) {
-            throw new Error("Response from server was not ok");
+            if (res.status === 401) {
+              window.location.href = `/?${serviceType}_session_expired=true`;
+              return;
+            }
+            throw new Error(`Failed to fetch playlists from ${serviceType}`);
           }
           return res.json();
         })
         .then((data) => {
           const playlistsData =
             serviceType === "spotify" ? data.items : data.playlists;
-          console.log(data.playlists);
+          console.log("YouTube: ", data.playlists);
+          console.log("Spotify: ", data.items)
           setPlaylists(playlistsData);
         })
         .catch((error) => {

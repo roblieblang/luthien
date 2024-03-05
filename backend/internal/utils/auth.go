@@ -207,9 +207,6 @@ func GetValidAccessToken(params GetValidAccessTokenParams) (string, error) {
     }
     if err != nil {
         log.Printf("error occurred while attempting to retrieve an access token: %v", err)
-        // if err := HandleLogout(params.Updater, clearTokenParams); err != nil {
-        //     return "", fmt.Errorf("error logging out user after failed token retrieval")
-        // }
         return "", err
     } else {
         isExpired, err := IsAccessTokenExpired(params.AppCtx, fmt.Sprintf("%sAccessToken:%s", params.Party, params.UserID), accessToken)
@@ -230,11 +227,11 @@ func GetValidAccessToken(params GetValidAccessTokenParams) (string, error) {
 
     if err == redis.Nil {
         // Empty refresh token means that the user's authentication session has expired and they must now reauthenticate
+        log.Printf("Absent refresh token. Logging out user %s", params.UserID)
         if err := HandleLogout(params.Updater, clearTokenParams); err != nil {
             log.Printf("Error handling forced logout for user %s: %v", params.UserID, err)
         }
-        // TODO: send this message to the frontend
-        return "", fmt.Errorf("user must reauthenticate with %s", params.Party)
+        return "", fmt.Errorf("reauthentication required with %s", params.Party)
     } else if err != nil {
         log.Printf("failed to retrieve %s API Refresh Token: %v", params.Party, err)
         return "", err
@@ -297,8 +294,7 @@ func GetValidAccessToken(params GetValidAccessTokenParams) (string, error) {
             if err := HandleLogout(params.Updater, clearTokenParams); err != nil {
                 log.Printf("Error handling forced logout for user %s: %v", params.UserID, err)
             }
-            // TODO: send this message to the frontend
-            return "", fmt.Errorf("user must reauthenticate with %s", params.Party)
+            return "", fmt.Errorf("reauthentication required with %s", params.Party)
         }
     }
 }
@@ -308,7 +304,6 @@ type UserMetadataUpdater interface {
     UpdateUserMetadata(userID string, updatedAuthStatus map[string]interface{}) error
 }
 
-// TODO: this function needs to tell the frontend that the user has been deauthenticated and must reauthenticate
 // Called when user clicks "Log Out of <party>" button on the user interface
 func HandleLogout(updater UserMetadataUpdater, params ClearTokensParams) error {
     clearTokenParams := ClearTokensParams{ Party: params.Party, UserID: params.UserID, AppCtx: params.AppCtx}

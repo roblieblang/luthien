@@ -1,4 +1,5 @@
 import { useAuth0 } from "@auth0/auth0-react";
+import { useEffect } from "react";
 import { IoMdPerson } from "react-icons/io";
 import { MdLibraryMusic } from "react-icons/md";
 import { Link } from "react-router-dom";
@@ -13,6 +14,15 @@ export default function Home() {
   const { isAuthenticated } = useAuth0();
   const { spotifyAuthStatus, youTubeAuthStatus } = useUser();
 
+  useEffect(() => {
+    if (
+      new URLSearchParams(window.location.search).get("session_expired") ===
+      "true"
+    ) {
+      window.history.replaceState(null, null, window.location.pathname);
+    }
+  }, []);
+
   return (
     <div className="flex flex-col items-center justify-center text-center">
       <title className="absolute inset-0 flex flex-col items-center justify-center mb-10">
@@ -22,17 +32,11 @@ export default function Home() {
         {isAuthenticated && (
           <>
             <div className="absolute top-0 left-0 p-4 flex flex-row space-x-2">
-              <Link
-                className="bg-transparent"
-                to="/profile"
-              >
+              <Link className="bg-transparent" to="/profile">
                 <IoMdPerson size={35} />
               </Link>
               {(spotifyAuthStatus || youTubeAuthStatus) && (
-                <Link
-                  className="bg-transparent"
-                  to="/music"
-                >
+                <Link className="bg-transparent" to="/music">
                   <MdLibraryMusic size={35} />
                 </Link>
               )}

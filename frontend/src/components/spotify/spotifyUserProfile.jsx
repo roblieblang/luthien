@@ -11,7 +11,11 @@ export default function SpotifyUserProfile() {
       fetch(`http://localhost:8080/spotify/current-profile?userID=${userID}`)
         .then((res) => {
           if (!res.ok) {
-            throw new Error("Response from server was not ok");
+            if (res.status === 401) {
+              window.location.href = `/?spotify_session_expired=true`;
+              return;
+            }
+            throw new Error("Failed to fetch Spotify User Profile");
           }
           return res.json();
         })
