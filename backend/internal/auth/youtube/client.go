@@ -63,6 +63,7 @@ func (c *YouTubeClient) RequestToken(payload url.Values) (utils.TokenResponse, e
 }
 
 // Gets the current user's playlists
+// TODO: pagination
 func (c *YouTubeClient) GetCurrentUserPlaylists(accessToken string) (YouTubePlaylistsResponse, error) {
     token := &oauth2.Token{AccessToken: accessToken}
     tokenSource := oauth2.StaticTokenSource(token)
@@ -96,6 +97,7 @@ func (c *YouTubeClient) GetCurrentUserPlaylists(accessToken string) (YouTubePlay
 
 
 // Gets a playlist's items
+// TODO: pagination
 func (c *YouTubeClient) GetPlaylistItems(playlistID, accessToken string) (YouTubePlaylistItemsResponse, error) {
     token := &oauth2.Token{AccessToken: accessToken}
     tokenSource := oauth2.StaticTokenSource(token)

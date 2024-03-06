@@ -201,3 +201,20 @@ func (s *SpotifyService) AddItemsToPlaylist(userID, playlistID string, payload A
     }
     return s.SpotifyClient.AddItemsToPlaylist(accessToken, playlistID, payload)
 }
+
+// Wrapper service function for GetTrackURIWithArtistAndTitle client function
+func (s *SpotifyService) GetTrackURIWithArtistAndTitle(userID, artistName, trackTitle string, limit, offset int) (SpotifySearchResponse, error) {
+    params := utils.GetValidAccessTokenParams{
+        UserID: userID, 
+        Party: "spotify", 
+        Service: s.SpotifyClient,
+        AppCtx: *s.AppContext,
+        Updater: s.Auth0Service,
+    }
+    accessToken, err := utils.GetValidAccessToken(params)
+    if err != nil {
+        log.Printf("Error getting valid access token: %v", err)
+        return SpotifySearchResponse{}, err
+    }
+    return s.SpotifyClient.GetTrackURIWithArtistAndTitle(accessToken, artistName, trackTitle, limit, offset)
+}

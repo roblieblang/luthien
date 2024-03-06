@@ -73,6 +73,7 @@ func main() {
     router.GET("/spotify/playlist-tracks", spotifyHandler.GetPlaylistTracksHandler)
     router.POST("/spotify/create-playlist", spotifyHandler.CreatePlaylistHandler)
     router.POST("/spotify/add-items-to-playlist", spotifyHandler.AddItemsToPlaylistHandler)
+    router.GET("/spotify/search-for-track", spotifyHandler.GetTrackURIWithArtistAndTitleHandler)
 
     // YouTube setup
     youTubeClient := youtube.NewYouTubeClient(appCtx)

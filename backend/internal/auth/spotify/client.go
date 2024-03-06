@@ -141,13 +141,7 @@ type CreatePlaylistPayload struct {
     Description   string `json:"description,omitempty"`
 }
 
-type SpotifySearchResponse struct {
-    Tracks struct {
-        Items []struct {
-            URI string `json:"uri"`
-        } `json:"items"`
-    } `json:"tracks"`
-}
+
 
 // Returns a new SpotifyClient struct 
 func NewSpotifyClient(appCtx *utils.AppContext) *SpotifyClient {
@@ -238,6 +232,7 @@ func (c *SpotifyClient) GetCurrentUserProfile(accessToken string) (SpotifyUserPr
 }
 
 // Gets the current user's playlists
+// TODO: pagination
 func (c *SpotifyClient) GetCurrentUserPlaylists(accessToken string, limit, offset int) (SpotifyPlaylistsResponse, error) {
     url := fmt.Sprintf("https://api.spotify.com/v1/me/playlists?limit=%d&offset=%d", limit, offset)
 
@@ -288,6 +283,7 @@ func (c *SpotifyClient) buildPlaylistItemsURL(playlistID string, limit, offset i
 }
 
 // Gets playlist items (with pagination [necessary due to API rate limits]).
+// TODO: pagination
 // Spotify documentation: https://developer.spotify.com/documentation/web-api/reference/get-playlists-tracks
 func (c *SpotifyClient) GetPlaylistTracks(accessToken, playlistID string, limit, offset int) (SpotifyPlaylistTracksResponse, error) {
     url := c.buildPlaylistItemsURL(playlistID, limit, offset)
@@ -363,9 +359,9 @@ type AddItemsToPlaylistPayload struct {
     Position int        `json:"position"`
 }
 
-// TODO: implement 
 // Docs: https://developer.spotify.com/documentation/web-api/reference/add-tracks-to-playlist
 // Adds items to an existing Spotify playlist
+// TODO: pagination
 func (c *SpotifyClient) AddItemsToPlaylist(accessToken, playlistID string, addItemsPayload AddItemsToPlaylistPayload) error {
     if len(addItemsPayload.ItemURIs) > 100 {
         // TODO: something. perhaps this check should be done in the service layer?
@@ -406,21 +402,69 @@ func (c *SpotifyClient) AddItemsToPlaylist(accessToken, playlistID string, addIt
     return nil
 }
 
-/* YOUTUBE TO SPOTIFY CONVERSION FLOW */
-// 1. Get ISRC of all items in YouTube playlist (or similar identifier, maybe just combination of artist, album, title)
-//      - Can get ISRC with MusicBrainz API by searching for a recording with a title that matches the YouTube video title
-//      - https://musicbrainz.org/doc/MusicBrainz_API
-//      - This might be overkill, so maybe just do a simple search with cleaned video titles and see how that goes
-// 2. Use ISRC of each playlist item to find the equivalent item on Spotify and get its Spotify URI
-//    using GetURIWithISRC
-// 3. Assemble all URIs for the playlist-in-conversion into an array of strings
-// 4. Create a new Spotify playlist for the conversion
-// 5. Pass the URI array into the body of an AddItemsToPlaylist request
+type SpotifySearchResponse struct {
+    Tracks struct {
+        Items []struct {
+            URI string `json:"uri"`
+        } `json:"items"`
+    } `json:"tracks"`
+}
 
-// TODO: implement
+func (c *SpotifyClient) buildSearchURL(artistName, trackTitle string, limit, offset int) string {
+    baseURL := "https://api.spotify.com/v1/search"
+
+    encodedArtist := url.QueryEscape(artistName)
+    encodedTrack := url.QueryEscape(trackTitle)
+
+    params := url.Values{}
+    params.Add("limit", fmt.Sprintf("%d", limit))
+	params.Add("offset", fmt.Sprintf("%d", offset))
+    params.Add("q", fmt.Sprintf("track:%s artist:%s", encodedTrack, encodedArtist))
+    params.Add("type", "track")
+
+    fullURL := fmt.Sprintf("%s?%s", baseURL, params.Encode())
+    return fullURL
+}
+
 // Docs: https://developer.spotify.com/documentation/web-api/reference/search
-func (c *SpotifyClient) GetURIWithISRC(accessToken, isrc string) (SpotifySearchResponse, error) {    
-    return SpotifySearchResponse{}, nil
+// TODO: pagination(?: or should this be limited to the first few results?)
+// Retrieves Spotify track URIs using the artist name and track title as parameters
+func (c *SpotifyClient) GetTrackURIWithArtistAndTitle(accessToken, artistName, trackTitle string, limit, offset int,) (SpotifySearchResponse, error) {    
+    url := c.buildSearchURL(artistName, trackTitle, limit, offset)
+    req, err := http.NewRequest("GET", url, nil)
+    if err != nil {
+        return SpotifySearchResponse{}, fmt.Errorf("error creating request %w", err)
+    }
+
+    log.Printf("Sending request to Spotify API: %s", url)
+
+    req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", accessToken))
+
+    res, err := http.DefaultClient.Do(req)
+    if err != nil {
+        return SpotifySearchResponse{}, fmt.Errorf("error executing request: %w", err)
+    }
+
+    log.Printf("Received Spotify API response with status code: %d", res.StatusCode)
+    if res.StatusCode != http.StatusOK {
+        bodyBytes, err := io.ReadAll(res.Body)
+        if err == nil {
+            log.Printf("Spotify API response body: %s", string(bodyBytes))
+        }
+    }
+    
+    defer res.Body.Close()
+
+    var response SpotifySearchResponse
+    if err := json.NewDecoder(res.Body).Decode(&response); err != nil {
+        return SpotifySearchResponse{}, fmt.Errorf("error decoding response: %w", err)
+    }
+
+    if len(response.Tracks.Items) == 0 {
+        return SpotifySearchResponse{}, fmt.Errorf("no track found for artist: %s, title: %s", artistName, trackTitle)
+    }
+
+    return response, nil
 }
 
 // TODO: Implement Update Playlist(?) 
