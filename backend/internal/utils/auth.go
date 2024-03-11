@@ -74,6 +74,7 @@ func SetToken(params SetTokenParams) error {
     } else if tokenKind  == "Refresh" {
         expiration = time.Hour * 720 // one month
     }
+    log.Printf("Setting %s %s token for user %s with value: %s", party, tokenKind, params.UserID, params.Token)
 
     err := params.AppCtx.RedisClient.Set(context.Background(), fmt.Sprintf("%s%sToken:%s", party, tokenKind, params.UserID), params.Token, expiration).Err()
     if err != nil {
@@ -118,13 +119,16 @@ func RetrieveToken(params RetrieveTokenParams) (string, error) {
     token, err := params.AppCtx.RedisClient.Get(context.Background(), fmt.Sprintf("%s%sToken:%s", party, tokenKind, params.UserID)).Result()
     // Token not found
     if err == redis.Nil {
+        log.Printf("%s %s token not found for user %s", party, tokenKind, params.UserID)
         return "", nil
     } else if err != nil {
         return "", err
     } else if token == "" {
         // Token is found but its value is empty
+        log.Printf("%s %s token found with empty value for user %s", party, tokenKind, params.UserID)
         return "", nil
     }
+    log.Printf("Retrieved %s %s token for user %s with value: %s", party, tokenKind, params.UserID, token)
     return token, nil
 }
 
@@ -216,6 +220,7 @@ func GetValidAccessToken(params GetValidAccessTokenParams) (string, error) {
         }
         if !isExpired {
             // The token is valid and not expired
+            log.Printf("Retrieved valid access token for user %s with value: %s", params.UserID, accessToken)
             return accessToken, nil
         }
     }
@@ -243,6 +248,7 @@ func GetValidAccessToken(params GetValidAccessTokenParams) (string, error) {
         }
         // Use valid refresh token to request a new access token from <party>
         if !isExpired {
+            log.Printf("Refreshing access token for user %s with refresh token: %s", params.UserID, refreshToken)
             payload := url.Values{}
             payload.Set("grant_type", "refresh_token")
             payload.Set("refresh_token", refreshToken)

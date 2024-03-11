@@ -429,7 +429,7 @@ func (c *SpotifyClient) buildSearchURL(artistName, trackTitle string, limit, off
 // Docs: https://developer.spotify.com/documentation/web-api/reference/search
 // TODO: pagination(?: or should this be limited to the first few results?)
 // Retrieves Spotify track URIs using the artist name and track title as parameters
-func (c *SpotifyClient) GetTrackURIWithArtistAndTitle(accessToken, artistName, trackTitle string, limit, offset int,) (SpotifySearchResponse, error) {    
+func (c *SpotifyClient) GetTrackURIWithArtistAndTitle(accessToken, artistName, trackTitle string, limit, offset int) (SpotifySearchResponse, error) {    
     url := c.buildSearchURL(artistName, trackTitle, limit, offset)
     req, err := http.NewRequest("GET", url, nil)
     if err != nil {

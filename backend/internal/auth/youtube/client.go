@@ -223,4 +223,48 @@ func (c *YouTubeClient) AddItemsToPlaylist (accessToken string, payload AddItems
     return nil
 }
 
-// TODO: implement search for a video
+type YouTubeVideoSearchResponse struct {
+    Items []VideoSearchResult `json:"items"`
+}
+
+type VideoSearchResult struct {
+    ID          VideoID `json:"id"`
+    Title       string  `json:"title"`
+    Description string  `json:"description"`
+    ThumbnailURL string `json:"thumbnailUrl"`
+}
+
+type VideoID struct {
+    VideoID string `json:"videoId"`
+}
+
+// Searches for videos on YouTube based on a query
+func (c *YouTubeClient) SearchVideos(accessToken, query string,  maxResults int64) (YouTubeVideoSearchResponse, error) {
+    token := &oauth2.Token{AccessToken: accessToken}
+    tokenSource := oauth2.StaticTokenSource(token)
+    httpClient := oauth2.NewClient(context.Background(), tokenSource)
+
+    service, err := youtube.NewService(context.Background(), option.WithHTTPClient(httpClient))
+    if err != nil {
+        return YouTubeVideoSearchResponse{}, fmt.Errorf("error creating YouTube service: %v", err)
+    }
+
+    call := service.Search.List([]string{"id", "snippet"}).Q(query).MaxResults(maxResults).Type("video")
+    resp, err := call.Do()
+    if err != nil {
+        return YouTubeVideoSearchResponse{}, fmt.Errorf("error making API call: %v", err)
+    }
+
+    var items []VideoSearchResult
+    for _, item := range resp.Items {
+        thumbnailURL := getBestAvailableThumbnailURL(item.Snippet.Thumbnails)
+        items = append(items, VideoSearchResult{
+            ID: VideoID{VideoID: item.Id.VideoId},
+            Title: item.Snippet.Title,
+            Description: item.Snippet.Description,
+            ThumbnailURL: thumbnailURL,
+        })
+    }
+
+    return YouTubeVideoSearchResponse{Items: items}, nil
+}

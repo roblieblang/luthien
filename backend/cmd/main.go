@@ -91,6 +91,7 @@ func main() {
     router.GET("/youtube/playlist-tracks", youTubeHandler.GetPlaylistItemsHandler)
     router.POST("/youtube/create-playlist", youTubeHandler.CreatePlaylistHandler)
     router.POST("/youtube/add-items-to-playlist", youTubeHandler.AddItemsToPlaylistHandler)
+    router.GET("/youtube/search-for-video", youTubeHandler.SearchVideosHandler)
 
 
     router.GET("/", func(c *gin.Context) {

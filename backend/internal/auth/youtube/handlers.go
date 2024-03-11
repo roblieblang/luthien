@@ -215,3 +215,34 @@ func(h *YouTubeHandler) AddItemsToPlaylistHandler(c *gin.Context) {
 
     c.JSON(http.StatusOK, gin.H{"message": "Successfully added items to playlist"})
 }
+
+// Handles the retrieval of videos that match the given artist name and song title
+func (h *YouTubeHandler) SearchVideosHandler(c *gin.Context){
+    userID := c.Query("userID")
+    artistName := c.Query("artistName")
+    songTitle := c.Query("songTitle")
+
+    if userID == "" {
+        log.Printf("userID missing from query parameters")
+        c.JSON(http.StatusBadRequest, gin.H{"error": "userID query parameter is required"})
+        return
+    }
+
+    if artistName == "" || songTitle == "" {
+        log.Printf("artistName or songTitle missing from query parameters")
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Missing artist name or song title"})
+        return
+    }
+
+    searchResponse, err := h.youTubeService.SearchVideos(userID, artistName, songTitle)
+    if err != nil {
+        if strings.Contains(err.Error(), "reauthentication required") {
+            c.JSON(http.StatusUnauthorized, gin.H{"error": "authentication_required", "message": "Please reauthenticate with Spotify."})
+            return
+        }
+        c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+        return
+    }
+
+    c.JSON(http.StatusOK, searchResponse)
+}
