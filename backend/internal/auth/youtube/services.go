@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/url"
 	"time"
+    "log"
 
 	"github.com/roblieblang/luthien/backend/internal/auth/auth0"
 	"github.com/roblieblang/luthien/backend/internal/utils"
@@ -25,6 +26,7 @@ func NewYouTubeService(youTubeClient *YouTubeClient, auth0Service *auth0.Auth0Se
 
 // Completes the initial steps of the authorization code flow with PKCE
 func (s *YouTubeService) StartLoginFlow() (string, string, error) {
+    log.Printf("Inside StartLoginFlow service")
     sessionID := utils.GenerateSessionID()
     codeVerifier, err := utils.GenerateCodeVerifier(64)
     if err != nil {
@@ -40,6 +42,7 @@ func (s *YouTubeService) StartLoginFlow() (string, string, error) {
     params := url.Values{}
     params.Add("scope", "https://www.googleapis.com/auth/youtube")
     params.Add("access_type", "offline")
+    params.Add("prompt", "consent")
     params.Add("include_granted_scopes", "true")
     params.Add("response_type", "code")
     params.Add("state", "state_parameter_passthrough_value") // TODO: use a real value
@@ -55,6 +58,7 @@ func (s *YouTubeService) StartLoginFlow() (string, string, error) {
 
 // Handles the callback after user has successfully authorized our app on Google's auth page
 func (s *YouTubeService) HandleCallback(code, userID, sessionID string) error {
+    log.Printf("Inside HandleCallback service")
     payload := url.Values{}
     payload.Set("client_id", s.YouTubeClient.AppContext.EnvConfig.GoogleClientID)
     payload.Set("client_secret", s.YouTubeClient.AppContext.EnvConfig.GoogleClientSecret)
@@ -87,11 +91,13 @@ func (s *YouTubeService) HandleCallback(code, userID, sessionID string) error {
     // This is an arbitrary expiry. utils.SetToken() handles refresh token expiration time
     params.TokenKind = "refresh"
     params.Token = tokenResponse.RefreshToken
+    log.Printf("Received Google refresh token: '%s'", tokenResponse.RefreshToken)
     params.ExpiresIn = 0
     err = utils.SetToken(params) 
     if err != nil {
-        return fmt.Errorf("error storing the refresh token: %v", err)
+        return fmt.Errorf("error storing the Google refresh token: %v", err)
     }
+    log.Printf("Google refresh token stored successfully: %s", tokenResponse.RefreshToken)
 
     // Change user's Google authentication status to `true` 
     updatedAuthStatus := map[string]interface{}{
@@ -107,6 +113,7 @@ func (s *YouTubeService) HandleCallback(code, userID, sessionID string) error {
 
 // Wrapper service function for GetCurrentUserPlaylists client function
 func (s *YouTubeService) GetCurrentUserPlaylists(userID string)  (YouTubePlaylistsResponse, error) {
+    log.Printf("Inside GetCurrentUserPlaylists service")
     params := utils.GetValidAccessTokenParams{
         UserID: userID, 
         Party: "google", 
@@ -123,6 +130,7 @@ func (s *YouTubeService) GetCurrentUserPlaylists(userID string)  (YouTubePlaylis
 
 // Wrapper service function for GetPlaylistItems client function
 func (s *YouTubeService) GetPlaylistItems(userID, playlistID string)  (YouTubePlaylistItemsResponse, error) {
+    log.Printf("Inside GetPlaylistItems service")
     params := utils.GetValidAccessTokenParams{
         UserID: userID, 
         Party: "google", 
@@ -131,7 +139,7 @@ func (s *YouTubeService) GetPlaylistItems(userID, playlistID string)  (YouTubePl
         Updater: s.Auth0Service,
     }
     accessToken, err := utils.GetValidAccessToken(params)
-    fmt.Printf("\nGoogle Access Token: %s\n", accessToken)
+    log.Printf("\nGoogle Access Token: '%s'\n", accessToken)
     if err != nil {
         return YouTubePlaylistItemsResponse{}, err
     }
@@ -148,7 +156,7 @@ func (s *YouTubeService) CreatePlaylist(userID string, payload CreatePlaylistPay
         Updater: s.Auth0Service,
     }
     accessToken, err := utils.GetValidAccessToken(params)
-    fmt.Printf("YouTubeService.CreatePlaylist() access token: %s\n", accessToken)
+    log.Printf("YouTubeService.CreatePlaylist() access token: '%s'\n", accessToken)
     if err != nil {
         return nil, err
     }
@@ -185,6 +193,5 @@ func (s *YouTubeService) SearchVideos (userID, artistName, songTitle string) (Yo
         return YouTubeVideoSearchResponse{}, err
     }
     query := fmt.Sprintf("%s %s", artistName, songTitle)
-
-    return s.YouTubeClient.SearchVideos(accessToken, query, 5) // maxResults currently hardcoded to be 5
+    return s.YouTubeClient.SearchVideos(accessToken, query, 1) // maxResults currently hardcoded
 }

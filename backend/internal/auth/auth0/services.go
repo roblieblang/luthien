@@ -23,6 +23,7 @@ func NewAuth0Service(auth0Client *Auth0Client, appCtx *utils.AppContext) *Auth0S
 
 // Stores an Auth0 Management API access token in Redis
 func (s *Auth0Service) storeAuth0Token(tokenResponse utils.TokenResponse) error{
+    log.Printf("Storing Auth0 token")
     err := s.AppContext.RedisClient.Set(context.Background(), "auth0ManagementAPIAccessToken", tokenResponse.AccessToken, time.Duration(tokenResponse.ExpiresIn) * time.Second).Err()
     if err != nil {
         log.Printf("There was an issue storing the Auth0 Management API Access Token: %v", err)
@@ -33,6 +34,7 @@ func (s *Auth0Service) storeAuth0Token(tokenResponse utils.TokenResponse) error{
 
 // Retrieves an existing Auth0 Management API access token from Redis
 func (s *Auth0Service) retrieveAuth0Token() (string, error){
+    log.Printf("Retrieving Auth0 token")
 	accessToken, err := s.AppContext.RedisClient.Get(context.Background(), "auth0ManagementAPIAccessToken").Result()
     // Token not found, not an error
     if err == redis.Nil {
@@ -46,6 +48,7 @@ func (s *Auth0Service) retrieveAuth0Token() (string, error){
 
 // Helper function for getting a valid access token
 func (s *Auth0Service) getValidAccessToken() (string, error) {
+    log.Printf("Trying to get valid Auth0 access token...")
     accessToken, err := s.retrieveAuth0Token()
     // Check for redis.Nil to determine if the key was simply not found i.e. not an actual error
     if err == redis.Nil {
@@ -79,6 +82,7 @@ func (s *Auth0Service) getValidAccessToken() (string, error) {
         log.Printf("Failed to store new Auth0 Management API Access Token: %v", err)
         return "", err
     }
+    log.Printf("Successfully got valid Auth0 access token: '%s'", tokenResponse.AccessToken)
     return tokenResponse.AccessToken, nil
 }
 

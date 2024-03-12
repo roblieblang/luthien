@@ -56,6 +56,7 @@ func NewAuth0Client(appCtx *utils.AppContext) *Auth0Client {
 
 // Requests a new Auth0 Management API access token
 func (c *Auth0Client) RequestToken() (utils.TokenResponse, error) {
+	log.Printf("Requesting a new Auth0 token...")
     clientSecret := c.AppContext.EnvConfig.Auth0ManagementClientSecret
 	clientID := c.AppContext.EnvConfig.Auth0ManagementClientID
 	domain := c.AppContext.EnvConfig.Auth0Domain
@@ -99,10 +100,12 @@ func (c *Auth0Client) RequestToken() (utils.TokenResponse, error) {
         log.Printf("There was an issue unmarshaling the response: %v", err)
         return utils.TokenResponse{}, err
     }
+	log.Printf("Successfully requested new Auth0 token: %v", tokenResponse)
     return tokenResponse, nil
 }
 
 func (c *Auth0Client) GetUserMetadata(accessToken string, userID string) (Auth0UserMetadata, error) {
+	log.Printf("Getting Auth0 user metadata...")
     domain := c.AppContext.EnvConfig.Auth0Domain
 	url := fmt.Sprintf("https://%s/api/v2/users/%s", domain, userID)
     
@@ -117,7 +120,7 @@ func (c *Auth0Client) GetUserMetadata(accessToken string, userID string) (Auth0U
 
     res, err := http.DefaultClient.Do(req)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return Auth0UserMetadata{}, err
 	}
 	defer res.Body.Close()
@@ -139,6 +142,7 @@ func (c *Auth0Client) GetUserMetadata(accessToken string, userID string) (Auth0U
 		log.Printf("Failed to unmarshal response body: %v", err)
 		return Auth0UserMetadata{}, err
 	}
+	log.Printf("Sucessfully got Auth0 user metadata: %v", userMetadata)
 	return userMetadata, nil
 }
 

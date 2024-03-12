@@ -137,7 +137,6 @@ func (h *SpotifyHandler) GetCurrentUserProfileHandler(c *gin.Context) {
 }
 
 // Handles the retrieval of the current user's Spotify playlists
-// TODO: maybe this endpoint should get all playlists AND all tracks for each playlist in one go
 func(h *SpotifyHandler) GetCurrentUserPlaylistsHandler(c *gin.Context) {
     defaultLimit := 20
     defaultOffset := 0
@@ -303,11 +302,15 @@ func(h *SpotifyHandler) GetTrackURIWithArtistAndTitleHandler(c *gin.Context) {
     
     searchResponse, err := h.spotifyService.GetTrackURIWithArtistAndTitle(userID, artistName, trackTitle, limit, offset)
     if err != nil {
+        log.Printf("Search error: %v", err)
         if strings.Contains(err.Error(), "reauthentication required") {
             c.JSON(http.StatusUnauthorized, gin.H{"error": "authentication_required", "message": "Please reauthenticate with Spotify."})
             return
+        } else if strings.Contains(err.Error(), "no tracks found") {
+            c.JSON(http.StatusNotFound, gin.H{"error": "No tracks found"})
+        } else {
+            c.JSON(http.StatusInternalServerError, gin.H{"error": err})
         }
-        c.JSON(http.StatusInternalServerError, gin.H{"error": err})
         return
     }
 

@@ -31,6 +31,7 @@ func (h *YouTubeHandler) LoginHandler(c *gin.Context) {
 
 // Handles a Google de-authentication
 func (h *YouTubeHandler) LogoutHandler(c *gin.Context) {
+    log.Printf("Inside LogoutHandler")
     var req struct {
         UserID string `json:"userID"`
     }
@@ -237,7 +238,7 @@ func (h *YouTubeHandler) SearchVideosHandler(c *gin.Context){
     searchResponse, err := h.youTubeService.SearchVideos(userID, artistName, songTitle)
     if err != nil {
         if strings.Contains(err.Error(), "reauthentication required") {
-            c.JSON(http.StatusUnauthorized, gin.H{"error": "authentication_required", "message": "Please reauthenticate with Spotify."})
+            c.JSON(http.StatusUnauthorized, gin.H{"error": "authentication_required", "message": "Please reauthenticate with YouTube (Google)."})
             return
         }
         c.JSON(http.StatusInternalServerError, gin.H{"error": err})

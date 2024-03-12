@@ -461,11 +461,8 @@ func (c *SpotifyClient) GetTrackURIWithArtistAndTitle(accessToken, artistName, t
     }
 
     if len(response.Tracks.Items) == 0 {
-        return SpotifySearchResponse{}, fmt.Errorf("no track found for artist: %s, title: %s", artistName, trackTitle)
+        return SpotifySearchResponse{}, fmt.Errorf("no tracks found for '%s' by '%s'", trackTitle, artistName)
     }
 
     return response, nil
 }
-
-// TODO: Implement Update Playlist(?) 
-
