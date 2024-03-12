@@ -59,14 +59,18 @@ type SetTokenParams struct {
     UserID      string
     Token       string
     ExpiresIn   int
-    AppCtx  AppContext
+    AppCtx      AppContext
 }
 
 // Stores a token in Redis
 func SetToken(params SetTokenParams) error {
-    fmt.Printf("\nSetToken() params: %v\n", params)
+    log.Printf("\nSetToken() params: %v\n", params)
     party := strings.ToLower(params.Party)
     tokenKind := capitalizeFirstLetter(params.TokenKind)
+
+    if params.Token == "" {
+        return fmt.Errorf("empty %s token passed into SetToken()", params.TokenKind)
+    }
 
     var expiration time.Duration
     if tokenKind == "Access" {
@@ -75,7 +79,6 @@ func SetToken(params SetTokenParams) error {
         expiration = time.Hour * 720 // one month
     }
     log.Printf("Setting %s %s token for user %s with value: %s", party, tokenKind, params.UserID, params.Token)
-
     err := params.AppCtx.RedisClient.Set(context.Background(), fmt.Sprintf("%s%sToken:%s", party, tokenKind, params.UserID), params.Token, expiration).Err()
     if err != nil {
         return fmt.Errorf("error storing the access token: %v", err)
@@ -120,8 +123,9 @@ func RetrieveToken(params RetrieveTokenParams) (string, error) {
     // Token not found
     if err == redis.Nil {
         log.Printf("%s %s token not found for user %s", party, tokenKind, params.UserID)
-        return "", nil
+        return "", err
     } else if err != nil {
+        log.Printf("error whiole retrieving token: %v", err)
         return "", err
     } else if token == "" {
         // Token is found but its value is empty
@@ -135,27 +139,29 @@ func RetrieveToken(params RetrieveTokenParams) (string, error) {
 // Checks if the access token stored in Redis identified by `tokenName` argument has expired
 func IsAccessTokenExpired(appCtx AppContext, tokenName, token string) (bool, error) {
     if token == "" {
+        log.Printf("Token (%s: %s) is empty\n", tokenName, token)
         return true, nil
     }
 
     accessTokenTTL, err := appCtx.RedisClient.TTL(context.Background(), tokenName).Result()
     if err != nil {
-        log.Printf("There was an issue retrieving the access token time to live: %v\n", err)
+        log.Printf("error retrieving token (%s: %s) time to live: %v\n", tokenName, token, err)
         return true, err
     }
 
     // Token has a TTL and is soon to expire
     if accessTokenTTL > 0 && accessTokenTTL < 5 * time.Minute {
+        log.Printf("Token (%s: %s) is soon to expire\n", tokenName, token)
         return true, nil
     }
 
     if accessTokenTTL == -2 {
-        log.Printf("Token key does not exist\n")
+        log.Printf("Token (%s: %s) does not exist\n", tokenName, token)
         return true, nil
     }
 
     if accessTokenTTL == -1 {
-        log.Printf("Token does not have an expiry set\n")
+        log.Printf("Token (%s: %s) does not have expiry set\n", tokenName, token)
         return false, nil
     }
     
@@ -180,7 +186,7 @@ type GetValidAccessTokenParams struct {
     UserID      string
     Party       string
     Service     TokenService
-    AppCtx  AppContext
+    AppCtx      AppContext
     Updater     UserMetadataUpdater 
 }
 
@@ -197,112 +203,126 @@ func getClientID(party string, appCtx AppContext) (string, error) {
 // Attempts to get a valid access token or sends notice that the user must reauthenticate
 func GetValidAccessToken(params GetValidAccessTokenParams) (string, error) {
     // Try to get an access token directly from Redis first
-    tokenParams := RetrieveTokenParams{
+    accessToken, err := RetrieveToken(RetrieveTokenParams{
         Party: params.Party, 
         TokenKind: "access", 
         UserID: params.UserID, 
         AppCtx: params.AppCtx,
+    })
+    
+    if err != nil && err != redis.Nil {
+        log.Printf("Unexpected error occurred while attempting to retrieve an access token: %v", err)
+        return "", err
     } 
-    accessToken, err := RetrieveToken(tokenParams)
-    clearTokenParams := ClearTokensParams{
+
+    isExpired, err := IsAccessTokenExpired(params.AppCtx, fmt.Sprintf("%sAccessToken:%s", params.Party, params.UserID), accessToken)
+    if err != nil {
+        log.Printf("Error checking if access token is expired: %v", err)
+        return "", err
+    }
+    if !isExpired {
+        // The token is valid and not expired
+        log.Printf("Retrieved valid access token for user %s with value: %s", params.UserID, accessToken)
+        return accessToken, nil
+    }
+
+    // If the access token is expired or not found, attempt to use the refresh token
+    refreshToken, err := RetrieveToken(RetrieveTokenParams{
         Party: params.Party,
+        TokenKind: "refresh",
         UserID: params.UserID,
         AppCtx: params.AppCtx,
-    }
-    if err != nil {
-        log.Printf("error occurred while attempting to retrieve an access token: %v", err)
-        return "", err
-    } else {
-        isExpired, err := IsAccessTokenExpired(params.AppCtx, fmt.Sprintf("%sAccessToken:%s", params.Party, params.UserID), accessToken)
-        if err != nil {
-            log.Printf("Failed to check token freshness: %v", err)
-            return "", err
-        }
-        if !isExpired {
-            // The token is valid and not expired
-            log.Printf("Retrieved valid access token for user %s with value: %s", params.UserID, accessToken)
-            return accessToken, nil
-        }
-    }
-    // If the code reaches here, it means the access token was either not found or expired
-    tokenParams.TokenKind = "refresh"
-    fmt.Printf("\nREFRESH TOKEN PARAMS: %v\n", tokenParams)
-    refreshToken, err := RetrieveToken(tokenParams)
-    fmt.Printf("\nREFRESH TOKEN: %s\n", refreshToken)
+    })
 
-    if err == redis.Nil {
-        // Empty refresh token means that the user's authentication session has expired and they must now reauthenticate
+    if refreshToken == "" || err == redis.Nil {
+        // Refresh token is missing or empty; force reauthentication
         log.Printf("Absent refresh token. Logging out user %s", params.UserID)
-        if err := HandleLogout(params.Updater, clearTokenParams); err != nil {
+        if err := HandleLogout(params.Updater, ClearTokensParams{
+            Party: params.Party,
+            UserID: params.UserID,
+            AppCtx: params.AppCtx,
+        }); err != nil {
             log.Printf("Error handling forced logout for user %s: %v", params.UserID, err)
+            return "", fmt.Errorf("error forcing logout for user %s: %v", params.UserID, err)
         }
         return "", fmt.Errorf("reauthentication required with %s", params.Party)
     } else if err != nil {
-        log.Printf("failed to retrieve %s API Refresh Token: %v", params.Party, err)
+        log.Printf("Error retrieving refresh token: %v", err)
         return "", err
-    } else {
-        isExpired, err := IsAccessTokenExpired(params.AppCtx, fmt.Sprintf("%sRefreshToken:%s", params.Party, params.UserID), refreshToken)
+    }
+
+    isRefreshExpired, err := IsAccessTokenExpired(params.AppCtx, fmt.Sprintf("%sRefreshToken:%s", params.Party, params.UserID), refreshToken)
+    log.Printf("Refresh Token: '%s'\nisExpired?: %v", fmt.Sprintf("%sRefreshToken:%s", params.Party, params.UserID), isRefreshExpired)
+    if err != nil {
+        log.Printf("Error checking if refresh token is expired: %v", err)
+        return "", err
+    }
+
+    // Use valid refresh token to request a new access token from <party>
+    if !isRefreshExpired {
+        log.Printf("Refreshing access token for user %s with refresh token: '%s'", params.UserID, refreshToken)
+        payload := url.Values{}
+        payload.Set("grant_type", "refresh_token")
+        payload.Set("refresh_token", refreshToken)
+        clientID, err := getClientID(params.Party, params.AppCtx)
         if err != nil {
-            log.Printf("Failed to check token freshness: %v", err)
             return "", err
         }
-        // Use valid refresh token to request a new access token from <party>
-        if !isExpired {
-            log.Printf("Refreshing access token for user %s with refresh token: %s", params.UserID, refreshToken)
-            payload := url.Values{}
-            payload.Set("grant_type", "refresh_token")
-            payload.Set("refresh_token", refreshToken)
-            clientID, err := getClientID(params.Party, params.AppCtx)
-            if err != nil {
-                return "", err
-            }
-            payload.Set("client_id", clientID)
-            if params.Party == "google" || params.Party == "Google" {
-                payload.Set("client_secret", params.AppCtx.EnvConfig.GoogleClientSecret)
-            }
-
-            fmt.Printf("%s Access token request payload: %v", params.Party, payload)
-
-            tokenResponse, err := params.Service.RequestToken(payload)
-            fmt.Printf("\nTOKEN RESPONSE: %v\n", tokenResponse)
-            if err != nil {
-                return "", fmt.Errorf("error requesting access token from %s: %v", params.Party, err)
-            }
-            fmt.Printf("%s access token response: %v", params.Party, tokenResponse)
-            if tokenResponse.AccessToken == "" {
-                return "", errors.New("empty access token")
-            }
-
-            // Store the access token
-            setTokenParams := SetTokenParams{
-                TokenKind: "access",
-                Party: params.Party,
-                UserID: params.UserID, 
-                Token: tokenResponse.AccessToken,
-                ExpiresIn: tokenResponse.ExpiresIn,
-                AppCtx: params.AppCtx,
-            }
-            if err := SetToken(setTokenParams); err != nil {
-                return "", fmt.Errorf("error storing access token in Redis: %v", err)
-            }
-
-            // Store the new refresh token
-            setTokenParams.TokenKind = "refresh"
-            setTokenParams.Token = tokenResponse.RefreshToken
-            setTokenParams.ExpiresIn = 0
-            if err := SetToken(setTokenParams); err != nil {
-                return "", fmt.Errorf("error storing refresh token in Redis: %v", err)
-            }
-            // Successfully requested a new access token from <party> using the refresh token
-            return tokenResponse.AccessToken, nil
-        } else {
-            // Refresh token is expired, so user must reauthenticate
-            if err := HandleLogout(params.Updater, clearTokenParams); err != nil {
-                log.Printf("Error handling forced logout for user %s: %v", params.UserID, err)
-            }
-            return "", fmt.Errorf("reauthentication required with %s", params.Party)
+        payload.Set("client_id", clientID)
+        if params.Party == "google" || params.Party == "Google" {
+            payload.Set("client_secret", params.AppCtx.EnvConfig.GoogleClientSecret)
         }
+
+        log.Printf("%s Access token request payload: %v", params.Party, payload)
+
+        tokenResponse, err := params.Service.RequestToken(payload)
+        if err != nil {
+            return "", fmt.Errorf("error requesting access token using refresh token from %s: %v", params.Party, err)
+        }
+        log.Printf("%s access token response: %v", params.Party, tokenResponse)
+        if tokenResponse.AccessToken == "" {
+            return "", errors.New("empty access token")
+        }
+
+        // Store the access token
+        if err := SetToken(SetTokenParams{
+            TokenKind: "access",
+            Party: params.Party,
+            UserID: params.UserID, 
+            Token: tokenResponse.AccessToken,
+            ExpiresIn: tokenResponse.ExpiresIn,
+            AppCtx: params.AppCtx,
+        }); err != nil {
+            return "", fmt.Errorf("error storing new access token: %v", err)
+        }
+
+        // Store the new refresh token if present
+        if tokenResponse.RefreshToken != "" {
+            if err := SetToken(SetTokenParams{
+                TokenKind: "refresh",
+                Party: params.Party,
+                UserID: params.UserID,
+                Token: tokenResponse.RefreshToken,
+                ExpiresIn: 0,
+                AppCtx: params.AppCtx,
+            }); err != nil {
+                return "", fmt.Errorf("error storing new refresh token: %v", err)
+            }
+        }
+        // Successfully requested a new access token from <party> using the refresh token
+        return tokenResponse.AccessToken, nil
+    } 
+
+    // Refresh token is expired, so user must reauthenticate
+    if err := HandleLogout(params.Updater, ClearTokensParams{
+        Party: params.Party,
+        UserID: params.UserID,
+        AppCtx: params.AppCtx,
+    }); err != nil {
+        log.Printf("Error handling forced logout for user %s: %v", params.UserID, err)
+        return "", fmt.Errorf("error forcing logout for user %s: %v", params.UserID, err)
     }
+    return "", fmt.Errorf("reauthentication required with %s", params.Party)
 }
 
 // To mitigate circular dependency between auth0 and utils packages
@@ -312,9 +332,8 @@ type UserMetadataUpdater interface {
 
 // Called when user clicks "Log Out of <party>" button on the user interface
 func HandleLogout(updater UserMetadataUpdater, params ClearTokensParams) error {
-    clearTokenParams := ClearTokensParams{ Party: params.Party, UserID: params.UserID, AppCtx: params.AppCtx}
-
-    if err := ClearTokens(clearTokenParams); err != nil {
+    log.Printf("Inside HandleLogout util")
+    if err := ClearTokens(params); err != nil {
         return fmt.Errorf("error clearing %s tokens from Redis: %v", params.Party, err)
     }
 
