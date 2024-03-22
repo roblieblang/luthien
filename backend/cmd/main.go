@@ -3,18 +3,18 @@ package main
 import (
 	"context"
 	"log"
-    "time"
+	"time"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/roblieblang/luthien/backend/internal/auth/auth0"
+	"github.com/roblieblang/luthien/backend/internal/auth/openai"
 	"github.com/roblieblang/luthien/backend/internal/auth/spotify"
 	"github.com/roblieblang/luthien/backend/internal/auth/youtube"
 	"github.com/roblieblang/luthien/backend/internal/config"
 	"github.com/roblieblang/luthien/backend/internal/user"
 	"github.com/roblieblang/luthien/backend/internal/utils"
-    "gopkg.in/natefinch/lumberjack.v2"
-
+	"gopkg.in/natefinch/lumberjack.v2"
 )
 
 func LoggerMiddleware() gin.HandlerFunc {
@@ -97,7 +97,7 @@ func main() {
     router.GET("/spotify/playlist-tracks", spotifyHandler.GetPlaylistTracksHandler)
     router.POST("/spotify/create-playlist", spotifyHandler.CreatePlaylistHandler)
     router.POST("/spotify/add-items-to-playlist", spotifyHandler.AddItemsToPlaylistHandler)
-    router.GET("/spotify/search-for-track", spotifyHandler.GetTrackURIWithArtistAndTitleHandler)
+    router.GET("/spotify/search-for-track", spotifyHandler.SearchTracksHandler)
 
     // YouTube setup
     youTubeClient := youtube.NewYouTubeClient(appCtx)
@@ -116,6 +116,14 @@ func main() {
     router.POST("/youtube/create-playlist", youTubeHandler.CreatePlaylistHandler)
     router.POST("/youtube/add-items-to-playlist", youTubeHandler.AddItemsToPlaylistHandler)
     router.GET("/youtube/search-for-video", youTubeHandler.SearchVideosHandler)
+
+    // OpenAI setup
+    openAIClient := openai.NewOpenAIClient(appCtx)
+    openAIService := openai.NewOpenAIService(openAIClient)
+    openAIHandler := openai.NewOpenAIHandler(openAIService)
+
+    // OpenAI endpoints
+    router.POST("/auth/openai/extract-artist-song", openAIHandler.ExtractArtistAndSongFromVideoTitleHandler)
 
 
     router.GET("/", func(c *gin.Context) {
