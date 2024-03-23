@@ -5,16 +5,25 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
-    "github.com/redis/go-redis/v9"  
-    "fmt"
-    "net/url"
+	"errors"
+	"fmt"
 	"io"
-    "errors"
 	"log"
 	"math/big"
+	"net/url"
 	"strings"
 	"time"
+
+	"github.com/redis/go-redis/v9"
 )
+
+type UnifiedTrackSearchResult struct {
+    ID          string `json:"id"`
+    Title       string `json:"title"`
+    Artist      string `json:"artist"`
+    Album       string `json:"album"`
+    Thumbnail   string `json:"thumbnail"`
+}
 
 // Returns a high-entropy random string which will be used as a code verifier after being hashed
 func GenerateCodeVerifier(length int) (string, error) {
@@ -260,12 +269,14 @@ func GetValidAccessToken(params GetValidAccessTokenParams) (string, error) {
 
     // Use valid refresh token to request a new access token from <party>
     if !isRefreshExpired {
-        log.Printf("Refreshing access token for user %s with refresh token: '%s'", params.UserID, refreshToken)
+        log.Printf("Refreshing %s access token for user %s with refresh token: '%s'", params.Party, params.UserID, refreshToken)
+
         payload := url.Values{}
         payload.Set("grant_type", "refresh_token")
         payload.Set("refresh_token", refreshToken)
         clientID, err := getClientID(params.Party, params.AppCtx)
         if err != nil {
+            log.Printf("Error getting client ID for %s: %v", params.Party, err)
             return "", err
         }
         payload.Set("client_id", clientID)
@@ -277,11 +288,31 @@ func GetValidAccessToken(params GetValidAccessTokenParams) (string, error) {
 
         tokenResponse, err := params.Service.RequestToken(payload)
         if err != nil {
-            return "", fmt.Errorf("error requesting access token using refresh token from %s: %v", params.Party, err)
+            log.Printf("Error refreshing token for user %s with %s, forcing reauthentication: %v", params.UserID, params.Party, err)
+            if logoutErr := HandleLogout(params.Updater, ClearTokensParams{
+                Party: params.Party,
+                UserID: params.UserID,
+                AppCtx: params.AppCtx,
+            }); logoutErr != nil {
+                log.Printf("Error handling forced logout/reauthentication for user %s: %v", params.UserID, logoutErr)
+                return "", fmt.Errorf("error forcing logout/reauthentication for user %s: %v", params.UserID, logoutErr)
+            }
+            return "", fmt.Errorf("reauthentication required with %s for user %s", params.Party, params.UserID)
         }
-        log.Printf("%s access token response: %v", params.Party, tokenResponse)
+
+        log.Printf("Received token response from %s for user %s: AccessToken=%s, ExpiresIn=%d, RefreshToken=%s", params.Party, params.UserID, tokenResponse.AccessToken, tokenResponse.ExpiresIn, tokenResponse.RefreshToken)
+
         if tokenResponse.AccessToken == "" {
-            return "", errors.New("empty access token")
+            log.Printf("Refreshed access token came in empty for user %s with %s, forcing reauthentication: %v", params.UserID, params.Party, err)
+            if logoutErr := HandleLogout(params.Updater, ClearTokensParams{
+                Party: params.Party,
+                UserID: params.UserID,
+                AppCtx: params.AppCtx,
+            }); logoutErr != nil {
+                log.Printf("Error handling forced logout/reauthentication for user %s: %v", params.UserID, logoutErr)
+                return "", fmt.Errorf("error forcing logout/reauthentication for user %s: %v", params.UserID, logoutErr)
+            }
+            return "", fmt.Errorf("reauthentication required with %s for user %s", params.Party, params.UserID)
         }
 
         // Store the access token

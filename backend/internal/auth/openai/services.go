@@ -10,6 +10,6 @@ func NewOpenAIService(openAIClient *OpenAIClient) *OpenAIService {
 	}
 }
 
-func (s *OpenAIService) ExtractArtistAndSongFromVideoTitle(videoTitles []string) (string, error) {
+func (s *OpenAIService) ExtractArtistAndSongFromVideoTitle(videoTitles []string) ([]ArtistSongPair, error) {
 	return s.OpenAIClient.ExtractArtistAndSongFromVideoTitle(videoTitles)
 }

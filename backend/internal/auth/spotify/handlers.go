@@ -222,7 +222,7 @@ func(h *SpotifyHandler) CreatePlaylistHandler(c *gin.Context) {
         return
     }
 
-    _, err := h.spotifyService.CreatePlaylist(playlistData.UserID, playlistData.SpotifyUserID, playlistData.Payload)
+    newPlaylistID, err := h.spotifyService.CreatePlaylist(playlistData.UserID, playlistData.SpotifyUserID, playlistData.Payload)
     if err != nil {
         if strings.Contains(err.Error(), "reauthentication required") {
             c.JSON(http.StatusUnauthorized, gin.H{"error": "authentication_required", "message": "Please reauthenticate with Spotify."})
@@ -232,7 +232,7 @@ func(h *SpotifyHandler) CreatePlaylistHandler(c *gin.Context) {
         return
     }
 
-    c.JSON(http.StatusOK, gin.H{"message": "Successfully created new playlist"})
+    c.JSON(http.StatusOK, gin.H{"message": "Successfully created new playlist", "newPlaylistId": newPlaylistID})
 }
 
 type AddItemsToPlaylistBody struct {
@@ -255,7 +255,7 @@ func(h *SpotifyHandler) AddItemsToPlaylistHandler(c *gin.Context) {
             c.JSON(http.StatusUnauthorized, gin.H{"error": "authentication_required", "message": "Please reauthenticate with Spotify."})
             return
         }
-        c.JSON(http.StatusBadRequest, gin.H{"error": "error creating playlist"})
+        c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("error adding items to playlist: %v", err)})
         return
     }
 
@@ -263,7 +263,7 @@ func(h *SpotifyHandler) AddItemsToPlaylistHandler(c *gin.Context) {
 }
 
 // Handles the retrieval of track URI given an artist name and track title
-func(h *SpotifyHandler) GetTrackURIWithArtistAndTitleHandler(c *gin.Context) {
+func(h *SpotifyHandler) SearchTracksHandler(c *gin.Context) {
     defaultLimit := 20
     defaultOffset := 0
 
@@ -287,20 +287,15 @@ func(h *SpotifyHandler) GetTrackURIWithArtistAndTitleHandler(c *gin.Context) {
     }
 
     trackTitle := c.Query("trackTitle")
-    if trackTitle == "" {
-        log.Printf("trackTitle missing from query parameters")
-        c.JSON(http.StatusBadRequest, gin.H{"error": "trackTitle query parameter is required"})
-        return
-    }
-
     artistName := c.Query("artistName")
-    if artistName == "" {
-        log.Printf("artistName missing from query parameters")
-        c.JSON(http.StatusBadRequest, gin.H{"error": "artistName query parameter is required"})
+
+    if artistName == "" && trackTitle == "" {
+        log.Printf("Either trackTitle or artistName must be provided")
+        c.JSON(http.StatusBadRequest, gin.H{"error": "either trackTitle or artistName query parameter is required"})
         return
     }
     
-    searchResponse, err := h.spotifyService.GetTrackURIWithArtistAndTitle(userID, artistName, trackTitle, limit, offset)
+    tracksFound, err := h.spotifyService.SearchTracks(userID, artistName, trackTitle, limit, offset)
     if err != nil {
         log.Printf("Search error: %v", err)
         if strings.Contains(err.Error(), "reauthentication required") {
@@ -314,5 +309,5 @@ func(h *SpotifyHandler) GetTrackURIWithArtistAndTitleHandler(c *gin.Context) {
         return
     }
 
-    c.JSON(http.StatusOK, searchResponse)
+    c.JSON(http.StatusOK, tracksFound)
 }

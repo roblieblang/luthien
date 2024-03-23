@@ -2,14 +2,14 @@ package spotify
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/json"
-    "encoding/base64"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
-    "strings"
 	"net/url"
+	"strings"
 
 	"github.com/roblieblang/luthien/backend/internal/utils"
 )
@@ -319,18 +319,18 @@ func (c *SpotifyClient) GetPlaylistTracks(accessToken, playlistID string, limit,
 }
 
 // Creates a new playlist
-func (c *SpotifyClient) CreatePlaylist(accessToken, spotifyUserID string, playlistPayload CreatePlaylistPayload) ([]byte, error) {
+func (c *SpotifyClient) CreatePlaylist(accessToken, spotifyUserID string, playlistPayload CreatePlaylistPayload) (string, error) {
     url := fmt.Sprintf("https://api.spotify.com/v1/users/%s/playlists", spotifyUserID)
     
     payload, err := json.Marshal(playlistPayload)
     if err != nil {
         // TODO: standardize error handling across the application
-        return nil, fmt.Errorf("error marshaling payload: %w", err)
+        return "", fmt.Errorf("error marshaling payload: %w", err)
 	}
     
     req, err := http.NewRequest("POST", url, bytes.NewBuffer(payload))
 	if err != nil {
-        return nil, fmt.Errorf("error creating request: %w", err)
+        return "", fmt.Errorf("error creating request: %w", err)
     }
 
     req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", accessToken))
@@ -338,20 +338,36 @@ func (c *SpotifyClient) CreatePlaylist(accessToken, spotifyUserID string, playli
 
     res, err := http.DefaultClient.Do(req)
     if err != nil {
-        return nil, fmt.Errorf("error executing request: %w", err)
+        return "", fmt.Errorf("error executing request: %w", err)
     }
     defer res.Body.Close()
 
     body, err := io.ReadAll(res.Body)
     if err != nil {
-        return nil, fmt.Errorf("error reading response body: %w", err)
+        return "", fmt.Errorf("error reading response body: %w", err)
     }
 
     if res.StatusCode >= 400 {
-        return nil, fmt.Errorf("spotify API error (status code %d): %s", res.StatusCode, string(body))
+        var spotifyError struct {
+            Error struct {
+                Status  int    `json:"status"`
+                Message string `json:"message"`
+            } `json:"error"`
+        }
+        json.Unmarshal(body, &spotifyError) 
+        log.Printf("spotify API error: %d %s", spotifyError.Error.Status, spotifyError.Error.Message)
+        return "", fmt.Errorf("spotify API error: %d %s", spotifyError.Error.Status, spotifyError.Error.Message)
+    }
+    var responseBody struct {
+        ID string `json:"id"`
     }
     
-    return body, nil
+    err = json.Unmarshal(body, &responseBody)
+    if err != nil {
+        return "", fmt.Errorf("error unmarshaling response body: %w", err)
+    }
+
+    return responseBody.ID, nil
 }
 
 type AddItemsToPlaylistPayload struct {
@@ -405,35 +421,89 @@ func (c *SpotifyClient) AddItemsToPlaylist(accessToken, playlistID string, addIt
 type SpotifySearchResponse struct {
     Tracks struct {
         Items []struct {
-            URI string `json:"uri"`
+            Album struct {
+                Name   string `json:"name"`
+                Images []Image `json:"images"`
+            } `json:"album"`
+            Artists []struct {
+                Name string `json:"name"`
+            } `json:"artists"`
+            Name string `json:"name"`
+            URI  string `json:"uri"`
         } `json:"items"`
     } `json:"tracks"`
 }
 
+type Track struct {
+    URI            string `json:"uri"`
+    Title          string `json:"title"`
+    ArtistNames    string `json:"artistNames"` // Concatenated names of the artists
+    AlbumName      string `json:"albumName"`
+    AlbumImageUrl  string `json:"albumImageUrl"`
+}
+
+// Processes a Spotify track search response and returns a struct containing relevant track information
+func processSpotifySearchResponse(response SpotifySearchResponse) []utils.UnifiedTrackSearchResult {
+    var searchResults []utils.UnifiedTrackSearchResult
+    for _, item := range response.Tracks.Items {
+        var albumImageURL string
+        if len(item.Album.Images) > 0 {
+            albumImageURL = item.Album.Images[0].URL
+        }
+
+        artistNames := make([]string, len(item.Artists))
+        for i, artist := range item.Artists {
+            artistNames[i] = artist.Name
+        }
+        searchResult := utils.UnifiedTrackSearchResult{
+            ID:         item.URI,
+            Title:      item.Name,
+            Artist:     strings.Join(artistNames, ", "),
+            Album:      item.Album.Name,
+            Thumbnail:  albumImageURL,
+        }
+
+        searchResults = append(searchResults, searchResult)
+    }
+    return searchResults
+}
+
+// Builds a search URL to be used to search for matching Spotify tracks
 func (c *SpotifyClient) buildSearchURL(artistName, trackTitle string, limit, offset int) string {
     baseURL := "https://api.spotify.com/v1/search"
+    var queryParts []string
 
-    encodedArtist := url.QueryEscape(artistName)
-    encodedTrack := url.QueryEscape(trackTitle)
+    if trackTitle != "" {
+        encodedTrack := url.QueryEscape(trackTitle)
+        queryParts = append(queryParts, fmt.Sprintf("track:%s", encodedTrack))
+    }
+
+    if artistName != "" {
+        encodedArtist := url.QueryEscape(artistName)
+        queryParts = append(queryParts, fmt.Sprintf("artist:%s", encodedArtist))
+    }
+
+    query := strings.Join(queryParts, " ")
 
     params := url.Values{}
-    params.Add("limit", fmt.Sprintf("%d", limit))
-	params.Add("offset", fmt.Sprintf("%d", offset))
-    params.Add("q", fmt.Sprintf("track:%s artist:%s", encodedTrack, encodedArtist))
+    params.Add("query", query)
     params.Add("type", "track")
+    params.Add("limit", fmt.Sprintf("%d", limit))
+    params.Add("offset", fmt.Sprintf("%d", offset))
 
     fullURL := fmt.Sprintf("%s?%s", baseURL, params.Encode())
     return fullURL
 }
 
+
 // Docs: https://developer.spotify.com/documentation/web-api/reference/search
 // TODO: pagination(?: or should this be limited to the first few results?)
 // Retrieves Spotify track URIs using the artist name and track title as parameters
-func (c *SpotifyClient) GetTrackURIWithArtistAndTitle(accessToken, artistName, trackTitle string, limit, offset int) (SpotifySearchResponse, error) {    
+func (c *SpotifyClient) SearchTracks(accessToken, artistName, trackTitle string, limit, offset int) ([]utils.UnifiedTrackSearchResult, error) {    
     url := c.buildSearchURL(artistName, trackTitle, limit, offset)
     req, err := http.NewRequest("GET", url, nil)
     if err != nil {
-        return SpotifySearchResponse{}, fmt.Errorf("error creating request %w", err)
+        return nil, fmt.Errorf("error creating request %w", err)
     }
 
     log.Printf("Sending request to Spotify API: %s", url)
@@ -442,7 +512,7 @@ func (c *SpotifyClient) GetTrackURIWithArtistAndTitle(accessToken, artistName, t
 
     res, err := http.DefaultClient.Do(req)
     if err != nil {
-        return SpotifySearchResponse{}, fmt.Errorf("error executing request: %w", err)
+        return nil, fmt.Errorf("error executing request: %w", err)
     }
 
     log.Printf("Received Spotify API response with status code: %d", res.StatusCode)
@@ -457,12 +527,14 @@ func (c *SpotifyClient) GetTrackURIWithArtistAndTitle(accessToken, artistName, t
 
     var response SpotifySearchResponse
     if err := json.NewDecoder(res.Body).Decode(&response); err != nil {
-        return SpotifySearchResponse{}, fmt.Errorf("error decoding response: %w", err)
+        return nil, fmt.Errorf("error decoding response: %w", err)
     }
 
     if len(response.Tracks.Items) == 0 {
-        return SpotifySearchResponse{}, fmt.Errorf("no tracks found for '%s' by '%s'", trackTitle, artistName)
+        return nil, fmt.Errorf("no tracks found for '%s' by '%s'", trackTitle, artistName)
     }
 
-    return response, nil
+    tracksFound := processSpotifySearchResponse(response)
+
+    return tracksFound, nil
 }

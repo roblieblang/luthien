@@ -180,7 +180,7 @@ func (s *YouTubeService) AddItemsToPlaylist(userID string, payload AddItemsToPla
 }
 
 // Wrapper service function for SearchVideos client function
-func (s *YouTubeService) SearchVideos (userID, artistName, songTitle string) (YouTubeVideoSearchResponse, error) {
+func (s *YouTubeService) SearchVideos (userID, artistName, songTitle string) ([]utils.UnifiedTrackSearchResult, error) {
     params := utils.GetValidAccessTokenParams{
         UserID: userID, 
         Party: "google", 
@@ -190,7 +190,7 @@ func (s *YouTubeService) SearchVideos (userID, artistName, songTitle string) (Yo
     }
     accessToken, err := utils.GetValidAccessToken(params)
     if err != nil {
-        return YouTubeVideoSearchResponse{}, err
+        return nil, err
     }
     query := fmt.Sprintf("%s %s", artistName, songTitle)
     return s.YouTubeClient.SearchVideos(accessToken, query, 1) // maxResults currently hardcoded

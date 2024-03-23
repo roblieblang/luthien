@@ -171,7 +171,7 @@ func (s *SpotifyService) GetPlaylistTracks(userID, playlistID string, limit, off
 }
 
 // Wrapper service function for CreatePlaylist client function
-func (s *SpotifyService) CreatePlaylist(userID, spotifyUserID string, payload CreatePlaylistPayload) ([]byte, error) {
+func (s *SpotifyService) CreatePlaylist(userID, spotifyUserID string, payload CreatePlaylistPayload) (string, error) {
     params := utils.GetValidAccessTokenParams{
         UserID: userID, 
         Party: "spotify", 
@@ -181,7 +181,7 @@ func (s *SpotifyService) CreatePlaylist(userID, spotifyUserID string, payload Cr
     }
     accessToken, err := utils.GetValidAccessToken(params)
     if err != nil {
-        return nil, err
+        return "", err
     }
     return s.SpotifyClient.CreatePlaylist(accessToken, spotifyUserID, payload)
 }
@@ -202,8 +202,8 @@ func (s *SpotifyService) AddItemsToPlaylist(userID, playlistID string, payload A
     return s.SpotifyClient.AddItemsToPlaylist(accessToken, playlistID, payload)
 }
 
-// Wrapper service function for GetTrackURIWithArtistAndTitle client function
-func (s *SpotifyService) GetTrackURIWithArtistAndTitle(userID, artistName, trackTitle string, limit, offset int) (SpotifySearchResponse, error) {
+// Wrapper service function for SearchTracks client function
+func (s *SpotifyService) SearchTracks(userID, artistName, trackTitle string, limit, offset int) ([]utils.UnifiedTrackSearchResult, error) {
     params := utils.GetValidAccessTokenParams{
         UserID: userID, 
         Party: "spotify", 
@@ -214,7 +214,7 @@ func (s *SpotifyService) GetTrackURIWithArtistAndTitle(userID, artistName, track
     accessToken, err := utils.GetValidAccessToken(params)
     if err != nil {
         log.Printf("Error getting valid access token: %v", err)
-        return SpotifySearchResponse{}, err
+        return nil, err
     }
-    return s.SpotifyClient.GetTrackURIWithArtistAndTitle(accessToken, artistName, trackTitle, limit, offset)
+    return s.SpotifyClient.SearchTracks(accessToken, artistName, trackTitle, limit, offset)
 }

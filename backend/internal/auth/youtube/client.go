@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
+	"log"
 	"net/http"
 	"net/url"
 
@@ -30,11 +32,12 @@ type Playlist struct {
 }
 
 type PlaylistItem struct {
-    ID          string `json:"id"`
-    Title       string `json:"title"`
-    Description string `json:"description"`
-    ThumbnailURL string `json:"thumbnailUrl"`
-    VideoID     string `json:"videoId"`
+    ID              string `json:"id"`
+    Title           string `json:"title"`
+    Description     string `json:"description"`
+    ThumbnailURL    string `json:"thumbnailUrl"`
+    VideoID         string `json:"videoId"`
+    VideoOwnerChannelTitle    string `json:"videoOwnerChannelTitle"`
 }
 
 type YouTubePlaylistItemsResponse struct {
@@ -51,14 +54,28 @@ func NewYouTubeClient(appCtx *utils.AppContext) *YouTubeClient {
 func (c *YouTubeClient) RequestToken(payload url.Values) (utils.TokenResponse, error) {
     resp, err := http.PostForm("https://oauth2.googleapis.com/token", payload)
     if err != nil {
+        log.Printf("error making request for new Google access token: %v", err)
         return utils.TokenResponse{}, err
     }
     defer resp.Body.Close()
 
-    var tokenResponse utils.TokenResponse
-    if err := json.NewDecoder(resp.Body).Decode(&tokenResponse); err != nil {
+    bodyBytes, err := io.ReadAll(resp.Body)
+    if err != nil {
+        log.Printf("error reading google token response body: %v", err)
         return utils.TokenResponse{}, err
     }
+    bodyContent := string(bodyBytes)
+    
+    if resp.StatusCode >= 400 {
+        log.Printf("google access token request failed: %s, response body: %s", resp.Status, bodyContent)
+    }
+
+    var tokenResponse utils.TokenResponse
+    if err := json.Unmarshal(bodyBytes, &tokenResponse); err != nil {
+        log.Printf("error decoding google token response: %v", err)
+        return utils.TokenResponse{}, err
+    }
+
     return tokenResponse, nil
 }
 
@@ -119,11 +136,12 @@ func (c *YouTubeClient) GetPlaylistItems(playlistID, accessToken string) (YouTub
         thumbnailURL := getBestAvailableThumbnailURL(item.Snippet.Thumbnails)
 
         items = append(items, PlaylistItem{
-            ID:             item.Id,
-            Title:          item.Snippet.Title,
-            Description:    item.Snippet.Description,
-            ThumbnailURL:   thumbnailURL, // Use the safe variable instead
-            VideoID:        item.ContentDetails.VideoId,
+            ID:                     item.Id,
+            Title:                  item.Snippet.Title,
+            Description:            item.Snippet.Description,
+            ThumbnailURL:           thumbnailURL, // Use safe variable
+            VideoID:                item.ContentDetails.VideoId,
+            VideoOwnerChannelTitle: item.Snippet.VideoOwnerChannelTitle,
         })
     }
 
@@ -157,12 +175,18 @@ type CreatePlaylistPayload struct {
 
 // Creates a new YouTube playlist
 func (c *YouTubeClient) CreatePlaylist(accessToken string, payload CreatePlaylistPayload) (*youtube.Playlist, error) {
+    if payload.Title == ""{
+        log.Printf("Missing playlist title in payload for CreatePlaylist YouTube client")
+        return nil, fmt.Errorf("missing playlist title")
+    }
+    
     token := &oauth2.Token{AccessToken: accessToken}
     tokenSource := oauth2.StaticTokenSource(token)
     httpClient := oauth2.NewClient(context.Background(), tokenSource)
 
     service, err := youtube.NewService(context.Background(), option.WithHTTPClient(httpClient))
     if err != nil {
+        log.Printf("Error creating new YouTube service: %v", err)
         return nil, fmt.Errorf("error creating YouTube service: %v", err)
     }
 
@@ -181,6 +205,7 @@ func (c *YouTubeClient) CreatePlaylist(accessToken string, payload CreatePlaylis
     call := service.Playlists.Insert([]string{"snippet", "status"}, playlist)
     createdPlaylist, err := call.Do()
     if err != nil {
+        log.Printf("Error creating YouTube playlist: %v", err)
         return nil, fmt.Errorf("error creating YouTube playlist: %v", err)
     }
 
@@ -228,43 +253,49 @@ type YouTubeVideoSearchResponse struct {
 }
 
 type VideoSearchResult struct {
-    ID          VideoID `json:"id"`
-    Title       string  `json:"title"`
-    Description string  `json:"description"`
-    ThumbnailURL string `json:"thumbnailUrl"`
+    ID           VideoID `json:"id"`
+    Title        string  `json:"title"`
+    Description  string  `json:"description"`
+    ThumbnailURL string  `json:"thumbnailUrl"`
+    ChannelTitle string  `json:"channelTitle"`
 }
 
 type VideoID struct {
     VideoID string `json:"videoId"`
 }
+// TODO: handle API quotas. Search is 100x more expensive than all other GET requests used in this project
 
 // Searches for videos on YouTube based on a query
-func (c *YouTubeClient) SearchVideos(accessToken, query string,  maxResults int64) (YouTubeVideoSearchResponse, error) {
+func (c *YouTubeClient) SearchVideos(accessToken, query string,  maxResults int64) ([]utils.UnifiedTrackSearchResult, error) {
     token := &oauth2.Token{AccessToken: accessToken}
     tokenSource := oauth2.StaticTokenSource(token)
     httpClient := oauth2.NewClient(context.Background(), tokenSource)
 
     service, err := youtube.NewService(context.Background(), option.WithHTTPClient(httpClient))
     if err != nil {
-        return YouTubeVideoSearchResponse{}, fmt.Errorf("error creating YouTube service: %v", err)
+        log.Printf("error creating new YouTube service: %v", err)
+        return nil, fmt.Errorf("error creating YouTube service: %v", err)
     }
 
     call := service.Search.List([]string{"id", "snippet"}).Q(query).MaxResults(maxResults).Type("video")
     resp, err := call.Do()
     if err != nil {
-        return YouTubeVideoSearchResponse{}, fmt.Errorf("error making API call: %v", err)
+        log.Printf("error searching for YouTube video: %v", err)
+        return nil, fmt.Errorf("error making API call: %v", err)
     }
 
-    var items []VideoSearchResult
+    var results []utils.UnifiedTrackSearchResult
     for _, item := range resp.Items {
         thumbnailURL := getBestAvailableThumbnailURL(item.Snippet.Thumbnails)
-        items = append(items, VideoSearchResult{
-            ID: VideoID{VideoID: item.Id.VideoId},
-            Title: item.Snippet.Title,
-            Description: item.Snippet.Description,
-            ThumbnailURL: thumbnailURL,
-        })
+        result := utils.UnifiedTrackSearchResult{
+            ID:           item.Id.VideoId,
+            Title:        item.Snippet.Title,
+            Artist:       "", 
+            Album:        "",
+            Thumbnail:    thumbnailURL,
+        }
+        results = append(results, result)
     }
 
-    return YouTubeVideoSearchResponse{Items: items}, nil
+    return results, nil
 }

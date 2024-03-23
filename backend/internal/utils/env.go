@@ -21,6 +21,7 @@ type EnvConfig struct {
     Auth0ManagementClientID     string
     Auth0ManagementClientSecret string
     Auth0Domain                 string
+    OpenAIAPIKey                string
 }
 
 // Load the necessary ENV values
@@ -44,6 +45,7 @@ func LoadENV() *EnvConfig {
         Auth0ManagementClientID:        os.Getenv("AUTH0_MANAGEMENT_CLIENT_ID"),
         Auth0ManagementClientSecret:    os.Getenv("AUTH0_MANAGEMENT_CLIENT_SECRET"),
         Auth0Domain:                    os.Getenv("AUTH0_DOMAIN"),
+        OpenAIAPIKey:                   os.Getenv("OPENAI_API_KEY"),
     }
 }
 

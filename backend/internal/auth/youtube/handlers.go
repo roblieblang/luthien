@@ -175,7 +175,7 @@ func(h *YouTubeHandler) CreatePlaylistHandler(c *gin.Context) {
         c.JSON(http.StatusBadRequest, gin.H{"error": "user Id is required to create a new playlist"})
         return
     }
-    _, err := h.youTubeService.CreatePlaylist(playlistData.UserID, playlistData.Payload)
+    createdPlaylist, err := h.youTubeService.CreatePlaylist(playlistData.UserID, playlistData.Payload)
     if err != nil {
         if strings.Contains(err.Error(), "reauthentication required") {
             c.JSON(http.StatusUnauthorized, gin.H{"error": "authentication_required", "message": "Please reauthenticate with YouTube (Google)."})
@@ -185,7 +185,7 @@ func(h *YouTubeHandler) CreatePlaylistHandler(c *gin.Context) {
         return
     }
 
-    c.JSON(http.StatusOK, gin.H{"message": "Successfully created new playlist"})
+    c.JSON(http.StatusOK, createdPlaylist)
 }
 
 type AddItemsToPlaylistBody struct {
@@ -206,11 +206,13 @@ func(h *YouTubeHandler) AddItemsToPlaylistHandler(c *gin.Context) {
     }
 
     if err := h.youTubeService.AddItemsToPlaylist(addItemsData.UserID, addItemsData.Payload); err != nil {
-        if strings.Contains(err.Error(), "reauthentication required") {
+        errMsg := err.Error()
+        if strings.Contains(errMsg, "reauthentication required") {
             c.JSON(http.StatusUnauthorized, gin.H{"error": "authentication_required", "message": "Please reauthenticate with YouTube (Google)."})
             return
         }
-        c.JSON(http.StatusBadRequest, gin.H{"error": "error adding items to playlist"})
+        log.Printf("Error adding items to YouTube Playlist: %s", errMsg)
+        c.JSON(http.StatusBadRequest, gin.H{"error": errMsg, "message": "Error adding items to YouTube Playlist"})
         return
     }
 
@@ -218,7 +220,7 @@ func(h *YouTubeHandler) AddItemsToPlaylistHandler(c *gin.Context) {
 }
 
 // Handles the retrieval of videos that match the given artist name and song title
-func (h *YouTubeHandler) SearchVideosHandler(c *gin.Context){
+func (h *YouTubeHandler) SearchVideosHandler(c *gin.Context) {
     userID := c.Query("userID")
     artistName := c.Query("artistName")
     songTitle := c.Query("songTitle")
@@ -229,19 +231,21 @@ func (h *YouTubeHandler) SearchVideosHandler(c *gin.Context){
         return
     }
 
-    if artistName == "" || songTitle == "" {
-        log.Printf("artistName or songTitle missing from query parameters")
-        c.JSON(http.StatusBadRequest, gin.H{"error": "Missing artist name or song title"})
+    // Check if both artistName and songTitle are empty; if so, return an error.
+    if artistName == "" && songTitle == "" {
+        log.Printf("Both artistName and songTitle missing from query parameters")
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Either artist name or song title is required"})
         return
     }
 
+    // Assuming `SearchVideos` method has been adjusted to handle queries with either artistName, songTitle, or both.
     searchResponse, err := h.youTubeService.SearchVideos(userID, artistName, songTitle)
     if err != nil {
         if strings.Contains(err.Error(), "reauthentication required") {
             c.JSON(http.StatusUnauthorized, gin.H{"error": "authentication_required", "message": "Please reauthenticate with YouTube (Google)."})
             return
         }
-        c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
         return
     }
 
