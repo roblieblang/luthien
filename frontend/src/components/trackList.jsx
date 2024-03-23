@@ -1,12 +1,15 @@
 import { useEffect, useState } from "react";
+import { usePlaylist } from "../contexts/playlistContext";
 import { useUser } from "../contexts/userContext";
 
 const TrackList = ({ playlistID, sourceType }) => {
-  const [tracks, setTracks] = useState([]);
+  const { tracks, setTracks, setIsFetchingTracks } = usePlaylist();
   const { userID } = useUser();
 
   useEffect(() => {
     if (playlistID && userID) {
+      console.log("tracklist pID and uID:", playlistID, userID)
+      setIsFetchingTracks(true);
       let url;
       if (sourceType === "spotify") {
         url = `http://localhost:8080/spotify/playlist-tracks?userID=${userID}&playlistID=${playlistID}`;
@@ -20,13 +23,16 @@ const TrackList = ({ playlistID, sourceType }) => {
             if (!res.ok) {
               if (res.status === 401) {
                 window.location.href = `/?${sourceType}_session_expired=true`;
-                return;
+                return Promise.reject("Session expired");
               }
-              throw new Error(`Failed to fetch tracks for ${sourceType} playlist ${playlistID}`);
+              throw new Error(
+                `Failed to fetch tracks for ${sourceType} playlist ${playlistID}`
+              );
             }
             return res.json();
           })
           .then((data) => {
+            console.log("tracklist data:", data);
             const formattedTracks = data.items.map((item) => {
               if (sourceType === "spotify") {
                 return {
@@ -43,20 +49,22 @@ const TrackList = ({ playlistID, sourceType }) => {
                   id: item.id,
                   title: item.title,
                   thumbnailUrl: item.thumbnailUrl,
-                  artist: "",
-                  album: "",
+                  channelTitle: item.videoOwnerChannelTitle,
+                  // artist: "",
+                  // album: "",
                 };
               }
             });
-            console.log(formattedTracks);
             setTracks(formattedTracks);
+            console.log("tracklist formattedtracks:", formattedTracks);
           })
           .catch((error) => {
             console.error("Error fetching playlist tracks:", error);
-          });
+          })
+          .finally(() => setIsFetchingTracks(false));
       }
     }
-  }, [playlistID, userID, sourceType]);
+  }, [playlistID, setTracks, userID, sourceType, setIsFetchingTracks]);
 
   if (!tracks.length) {
     return <div>Loading tracks...</div>;

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { usePlaylist } from "../contexts/playlistContext";
 import { useUser } from "../contexts/userContext";
 import SpotifyPlaylist from "./spotify/spotifyPlaylist";
 import YouTubePlaylist from "./youtube/youTubePlaylist";
@@ -21,6 +22,7 @@ const services = {
 export default function UserPlaylists({ serviceType }) {
   const [playlists, setPlaylists] = useState([]);
   const { userID } = useUser();
+  const { playlistsLastUpdated } = usePlaylist();
 
   const limit = ""; // TODO: Handle pagination
   const offset = 0;
@@ -29,13 +31,11 @@ export default function UserPlaylists({ serviceType }) {
     if (userID && services[serviceType]) {
       const { api } = services[serviceType];
       const apiOptions = { userID };
-
-      // Optionally add limit and offset for services that may use them
+      // Optionally add limit and offset for services that use them
       if (serviceType === "spotify") {
         apiOptions.limit = limit;
         apiOptions.offset = offset;
       }
-
       fetch(api(apiOptions))
         .then((res) => {
           if (!res.ok) {
@@ -50,15 +50,15 @@ export default function UserPlaylists({ serviceType }) {
         .then((data) => {
           const playlistsData =
             serviceType === "spotify" ? data.items : data.playlists;
-          console.log("YouTube: ", data.playlists);
-          console.log("Spotify: ", data.items)
+          console.log("YouTube: ", playlistsData);
+          console.log("Spotify: ", playlistsData);
           setPlaylists(playlistsData);
         })
         .catch((error) => {
           console.error(`Error fetching ${serviceType} user playlists:`, error);
         });
     }
-  }, [userID, serviceType, limit, offset]);
+  }, [userID, serviceType, limit, offset, playlistsLastUpdated]);
 
   if (playlists == undefined || playlists.length === 0) {
     return <div>Loading playlists...</div>;

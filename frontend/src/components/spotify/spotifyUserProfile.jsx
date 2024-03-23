@@ -22,12 +22,14 @@ export default function SpotifyUserProfile() {
         .then((data) => {
           setProfile(data);
           updateSpotifyUserID(data.id);
+          sessionStorage.setItem("spotifyUserId", data.id)
+          console.log("spotify user profile id:", data.id)
         })
         .catch((error) => {
           console.error("Error fetching user profile:", error);
         });
     }
-  }, [userID, updateSpotifyUserID]);
+  }, [userID]);
 
   if (!profile) {
     return <div>Loading...</div>;

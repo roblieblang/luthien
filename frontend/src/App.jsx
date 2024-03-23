@@ -1,4 +1,5 @@
 import { Route, Routes } from "react-router-dom";
+import Conversion from "./pages/conversion";
 import GoogleCallback from "./pages/googleCallback";
 import Home from "./pages/home";
 import Music from "./pages/music";
@@ -14,6 +15,7 @@ export default function App() {
         <Route path="/spotify/callback" element={<SpotifyCallback />} />
         <Route path="/google/callback" element={<GoogleCallback />} />
         <Route path="/music" element={<Music />} />
+        <Route path="/conversion" element={<Conversion />} />
       </Routes>
     </>
   );

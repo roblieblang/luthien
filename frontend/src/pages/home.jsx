@@ -12,7 +12,7 @@ import { useUser } from "../contexts/userContext";
 
 export default function Home() {
   const { isAuthenticated } = useAuth0();
-  const { spotifyAuthStatus, youTubeAuthStatus } = useUser();
+  const { spotifyAuthStatus, youTubeAuthStatus, spotifyUserID } = useUser();
 
   useEffect(() => {
     if (
@@ -25,10 +25,10 @@ export default function Home() {
 
   return (
     <div className="flex flex-col items-center justify-center text-center">
-      <title className="absolute inset-0 flex flex-col items-center justify-center mb-10">
+      <div className="absolute inset-0 flex flex-col items-center justify-center mb-10 -mt-40">
         <BasicHeading text="A Playlist Conversion Tool." />
-      </title>
-      <div className="absolute inset-0 flex flex-col items-center justify-center mt-10">
+      </div>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
         {isAuthenticated && (
           <>
             <div className="absolute top-0 left-0 p-4 flex flex-row space-x-2">

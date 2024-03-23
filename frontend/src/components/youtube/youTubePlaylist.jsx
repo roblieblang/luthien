@@ -1,15 +1,11 @@
 import he from "he";
 import { useState } from "react";
+import { usePlaylist } from "../../contexts/playlistContext";
 import LinkButton from "../general/buttons/linkButton";
 import TrackList from "../trackList";
 
 export default function YouTubePlaylist({ playlist }) {
-  const [showTracks, setShowTracks] = useState(false);
-
-  const toggleTracks = () => {
-    setShowTracks(!showTracks);
-  };
-
+  const { setPlaylistDetails, tracks, isFetchingTracks } = usePlaylist();
   return (
     <div className="bg-slate-600 border border-yellow-600 border-solid p-4 m-2 flex w-10/12">
       <div className="flex-1 text-left">
@@ -21,7 +17,7 @@ export default function YouTubePlaylist({ playlist }) {
           />
         )}
         <h3 className="text-base font-medium">{he.decode(playlist.title)}</h3>
-        <p>{playlist.videosCount} tracks</p>
+        <p>Tracks: {playlist.videosCount}</p>
         <p>{he.decode(playlist.description) || ""}</p>
       </div>
       <div className="ml-auto flex flex-col justify-between">
@@ -29,19 +25,21 @@ export default function YouTubePlaylist({ playlist }) {
           to={`https://www.youtube.com/playlist?list=${playlist.id}`}
           text="Open in YouTube"
         />
-        {/* TODO: these probably shouldn't be LinkButtons */}
         {playlist.videosCount > 0 && (
           <>
             <LinkButton
-              to=""
-              text={showTracks ? "Hide Tracks" : "View Tracks"}
-              onClick={toggleTracks}
+              to={{
+                pathname: "/conversion",
+                state: {
+                  source: "YouTube",
+                  destination: "Spotify",
+                  title: playlist.title,
+                  playlistID: playlist.id,
+                },
+              }}
+              text="Select Playlist"
             />
-            <LinkButton to="" text="Convert" />
           </>
-        )}
-        {showTracks && (
-          <TrackList playlistID={playlist.id} sourceType={"youtube"} />
         )}
       </div>
     </div>
