@@ -26,7 +26,6 @@ type ArtistSongPair struct {
     SongTitle  string `json:"songTitle"`
 }
 
-
 // TODO: handle token limits and API quotas 
 // See https://github.com/pkoukk/tiktoken-go#counting-tokens-for-chat-api-calls for token counting
 
@@ -38,8 +37,19 @@ func (c *OpenAIClient) ExtractArtistAndSongFromVideoTitle(videoTitles []string) 
 	}
 
 	client := openai.NewClient(key)
-	// TODO: instead of a 2D array, should get an array of objects where songtitle and artistname are clearly identified
-	prompt := "For each of the following video titles, use your general knowledge to identify and return an array of objects where each object contains the artist's name under 'artistName' and the song title under 'songTitle'. If the artist's name cannot be confidently inferred, leave 'artistName' blank. Ensure there is no additional text in the response:"
+
+	backtick := "`"
+	prompt := `For each of the following YouTube video titles, use your general knowledge to identify 
+	and return an array of objects where each object contains the artist's name under 'artistName' 
+	and the song title which is most likely to exist on Spotify under 'songTitle'. 
+	If the artist's name cannot be confidently inferred or is not known to you, leave 'artistName' blank.
+	Ensure there is no additional text in the response as I will be parsing your response 
+	directly into a slice of structs of the following format: 
+	type ArtistSongPair struct {
+		ArtistName string ` + backtick + `json:"artistName"` + backtick + `
+		SongTitle  string ` + backtick + `json:"songTitle"` + backtick + `
+	}`
+
 	log.Printf("videoTitles to extract from: %v", videoTitles)
 	for _, title := range videoTitles {
 		prompt += fmt.Sprintf("\n%s", title)
@@ -62,12 +72,13 @@ func (c *OpenAIClient) ExtractArtistAndSongFromVideoTitle(videoTitles []string) 
 	if err != nil {
 		return nil, fmt.Errorf("error received during OpenAI chat completion request: %v", err)
 	}
-	
+
 	log.Printf("Response from OpenAI: %v", resp)
 	responseContent := resp.Choices[0].Message.Content
-	
-	var artistSongPairs []ArtistSongPair
+
 	log.Printf("Attempting to parse JSON: %s", responseContent)
+
+	var artistSongPairs []ArtistSongPair
 	err = json.Unmarshal([]byte(responseContent), &artistSongPairs)
 	if err != nil {
 		log.Printf("Error parsing OpenAI response into struct: %v", err)

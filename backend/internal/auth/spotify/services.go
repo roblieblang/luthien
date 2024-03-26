@@ -139,7 +139,7 @@ func (s *SpotifyService) GetCurrentUserProfile(userID string) (SpotifyUserProfil
 }
 
 // Wrapper service function for GetCurrentUserPlaylists client function
-func (s *SpotifyService) GetCurrentUserPlaylists(userID string, limit, offset int) (SpotifyPlaylistsResponse, error) {
+func (s *SpotifyService) GetCurrentUserPlaylists(userID string, offset int) (SpotifyPlaylistsResponse, error) {
     params := utils.GetValidAccessTokenParams{
         UserID: userID, 
         Party: "spotify", 
@@ -151,11 +151,11 @@ func (s *SpotifyService) GetCurrentUserPlaylists(userID string, limit, offset in
     if err != nil {
         return SpotifyPlaylistsResponse{}, err
     }
-    return s.SpotifyClient.GetCurrentUserPlaylists(accessToken, limit, offset)
+    return s.SpotifyClient.GetCurrentUserPlaylists(accessToken, offset)
 }
 
 // Wrapper service function for GetPlaylistTracks client function
-func (s *SpotifyService) GetPlaylistTracks(userID, playlistID string, limit, offset int) (SpotifyPlaylistTracksResponse, error) {
+func (s *SpotifyService) GetPlaylistTracks(userID, playlistID string) (SpotifyPlaylistTracksResponse, error) {
     params := utils.GetValidAccessTokenParams{
         UserID: userID, 
         Party: "spotify", 
@@ -167,7 +167,7 @@ func (s *SpotifyService) GetPlaylistTracks(userID, playlistID string, limit, off
     if err != nil {
         return SpotifyPlaylistTracksResponse{}, err
     }
-    return s.SpotifyClient.GetPlaylistTracks(accessToken, playlistID, limit, offset)
+    return s.SpotifyClient.GetPlaylistTracks(accessToken, playlistID)
 }
 
 // Wrapper service function for CreatePlaylist client function
@@ -202,8 +202,8 @@ func (s *SpotifyService) AddItemsToPlaylist(userID, playlistID string, payload A
     return s.SpotifyClient.AddItemsToPlaylist(accessToken, playlistID, payload)
 }
 
-// Wrapper service function for SearchTracks client function
-func (s *SpotifyService) SearchTracks(userID, artistName, trackTitle string, limit, offset int) ([]utils.UnifiedTrackSearchResult, error) {
+// Wrapper service function for SearchTracksUsingArtistAndTrack client function
+func (s *SpotifyService) SearchTracksUsingArtistAndTrack(userID, artistName, trackTitle string, limit, offset int) ([]utils.UnifiedTrackSearchResult, error) {
     params := utils.GetValidAccessTokenParams{
         UserID: userID, 
         Party: "spotify", 
@@ -216,5 +216,40 @@ func (s *SpotifyService) SearchTracks(userID, artistName, trackTitle string, lim
         log.Printf("Error getting valid access token: %v", err)
         return nil, err
     }
-    return s.SpotifyClient.SearchTracks(accessToken, artistName, trackTitle, limit, offset)
+    return s.SpotifyClient.SearchTracksUsingArtistAndTrack(accessToken, artistName, trackTitle, limit, offset)
+}
+
+// Wrapper service function for SearchTracksUsingVideoTitle client function
+func (s *SpotifyService) SearchTracksUsingVideoTitle(userID, videoTitle string) ([]utils.UnifiedTrackSearchResult, error) {
+    params := utils.GetValidAccessTokenParams{
+        UserID: userID, 
+        Party: "spotify", 
+        Service: s.SpotifyClient,
+        AppCtx: *s.AppContext,
+        Updater: s.Auth0Service,
+    }
+    accessToken, err := utils.GetValidAccessToken(params)
+    if err != nil {
+        log.Printf("Error getting valid access token: %v", err)
+        return nil, err
+    }
+    return s.SpotifyClient.SearchTracksUsingVideoTitle(accessToken, videoTitle)
+}
+
+// Wrapper service function for DeletePlaylist client function
+func (s *SpotifyService) DeletePlaylist(userID, playlistID string) error {
+    params := utils.GetValidAccessTokenParams{
+        UserID: userID, 
+        Party: "spotify", 
+        Service: s.SpotifyClient,
+        AppCtx: *s.AppContext,
+        Updater: s.Auth0Service,
+    }
+    accessToken, err := utils.GetValidAccessToken(params)
+    if err != nil {
+        log.Printf("Error getting valid access token: %v", err)
+        return err
+    }
+
+    return s.SpotifyClient.DeletePlaylist(accessToken, playlistID)    
 }

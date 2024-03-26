@@ -63,12 +63,10 @@ func (h *SpotifyHandler) CallbackHandler(c *gin.Context) {
         c.JSON(statusCode, gin.H{"error": err.Error()})
         return
     }
-    // TODO: troubleshoot empty access token response(?: if it starts disrupting user experience)
     c.JSON(http.StatusOK, gin.H{"redirectURL": "http://localhost:5173/"})
 }
 
 // Checks Spotify authentication status for a specific user
-// TODO: could we cache the result of this handler?
 func (h *SpotifyHandler) CheckAuthHandler(c *gin.Context) {
     userID := c.Query("userID")
     if userID == "" {
@@ -138,14 +136,7 @@ func (h *SpotifyHandler) GetCurrentUserProfileHandler(c *gin.Context) {
 
 // Handles the retrieval of the current user's Spotify playlists
 func(h *SpotifyHandler) GetCurrentUserPlaylistsHandler(c *gin.Context) {
-    defaultLimit := 20
     defaultOffset := 0
-
-    limitStr := c.DefaultQuery("limit", strconv.Itoa(defaultLimit))
-    limit, err := strconv.Atoi(limitStr)
-    if err != nil {
-        limit = defaultLimit
-    }
 
     offsetStr := c.DefaultQuery("offset", strconv.Itoa(defaultOffset))
     offset, err := strconv.Atoi(offsetStr)
@@ -159,7 +150,7 @@ func(h *SpotifyHandler) GetCurrentUserPlaylistsHandler(c *gin.Context) {
         return
     }
     
-    userPlaylists, err := h.spotifyService.GetCurrentUserPlaylists(userID, limit, offset)
+    userPlaylists, err := h.spotifyService.GetCurrentUserPlaylists(userID, offset)
     if err != nil {
         if strings.Contains(err.Error(), "reauthentication required") {
             c.JSON(http.StatusUnauthorized, gin.H{"error": "authentication_required", "message": "Please reauthenticate with Spotify."})
@@ -174,20 +165,20 @@ func(h *SpotifyHandler) GetCurrentUserPlaylistsHandler(c *gin.Context) {
 
 // Handles the retrieval of a single playlist's tracks
 func(h *SpotifyHandler) GetPlaylistTracksHandler(c *gin.Context) {
-    defaultLimit := 20
-    defaultOffset := 0
+    // defaultLimit := 20
+    // defaultOffset := 0
 
-    limitStr := c.DefaultQuery("limit", strconv.Itoa(defaultLimit))
-    limit, err := strconv.Atoi(limitStr)
-    if err != nil {
-        limit = defaultLimit
-    }
+    // limitStr := c.DefaultQuery("limit", strconv.Itoa(defaultLimit))
+    // limit, err := strconv.Atoi(limitStr)
+    // if err != nil {
+    //     limit = defaultLimit
+    // }
 
-    offsetStr := c.DefaultQuery("offset", strconv.Itoa(defaultOffset))
-    offset, err := strconv.Atoi(offsetStr)
-    if err != nil {
-        offset = defaultOffset
-    }
+    // offsetStr := c.DefaultQuery("offset", strconv.Itoa(defaultOffset))
+    // offset, err := strconv.Atoi(offsetStr)
+    // if err != nil {
+    //     offset = defaultOffset
+    // }
 
     userID := c.Query("userID")
     if userID == "" {
@@ -201,7 +192,7 @@ func(h *SpotifyHandler) GetPlaylistTracksHandler(c *gin.Context) {
         return
     }
     
-    playlistTracks, err := h.spotifyService.GetPlaylistTracks(userID, playlistID, limit, offset)
+    playlistTracks, err := h.spotifyService.GetPlaylistTracks(userID, playlistID)
     if err != nil {
         if strings.Contains(err.Error(), "reauthentication required") {
             c.JSON(http.StatusUnauthorized, gin.H{"error": "authentication_required", "message": "Please reauthenticate with Spotify."})
@@ -263,7 +254,7 @@ func(h *SpotifyHandler) AddItemsToPlaylistHandler(c *gin.Context) {
 }
 
 // Handles the retrieval of track URI given an artist name and track title
-func(h *SpotifyHandler) SearchTracksHandler(c *gin.Context) {
+func(h *SpotifyHandler) SearchTracksUsingArtistAndTrackhandler(c *gin.Context) {
     defaultLimit := 20
     defaultOffset := 0
 
@@ -295,7 +286,7 @@ func(h *SpotifyHandler) SearchTracksHandler(c *gin.Context) {
         return
     }
     
-    tracksFound, err := h.spotifyService.SearchTracks(userID, artistName, trackTitle, limit, offset)
+    tracksFound, err := h.spotifyService.SearchTracksUsingArtistAndTrack(userID, artistName, trackTitle, limit, offset)
     if err != nil {
         log.Printf("Search error: %v", err)
         if strings.Contains(err.Error(), "reauthentication required") {
@@ -310,4 +301,66 @@ func(h *SpotifyHandler) SearchTracksHandler(c *gin.Context) {
     }
 
     c.JSON(http.StatusOK, tracksFound)
+}
+
+// Handles the retrieval of track URI given a video title
+func(h *SpotifyHandler) SearchTracksUsingVideoTitleHandler(c *gin.Context) {
+    userID := c.Query("userID")
+    if userID == "" {
+        log.Printf("userID missing from query parameters")
+        c.JSON(http.StatusBadRequest, gin.H{"error": "userID query parameter is required"})
+        return
+    }
+
+    videoTitle := c.Query("videoTitle")
+
+    if videoTitle == "" {
+        log.Printf("videoTitle must be provided")
+        c.JSON(http.StatusBadRequest, gin.H{"error": "videoTitle query parameter is required"})
+        return
+    }
+    
+    tracksFound, err := h.spotifyService.SearchTracksUsingVideoTitle(userID, videoTitle)
+    if err != nil {
+        log.Printf("Search error: %v", err)
+        if strings.Contains(err.Error(), "reauthentication required") {
+            c.JSON(http.StatusUnauthorized, gin.H{"error": "authentication_required", "message": "Please reauthenticate with Spotify."})
+            return
+        } else if strings.Contains(err.Error(), "no tracks found") {
+            c.JSON(http.StatusNotFound, gin.H{"error": "No tracks found"})
+        } else {
+            c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+        }
+        return
+    }
+
+    c.JSON(http.StatusOK, tracksFound)
+}
+
+// Handles the deletion of a Spotify playlist
+func(h *SpotifyHandler) DeletePlaylistHandler(c *gin.Context) {
+    userID := c.Query("userID")
+    if userID == "" {
+        log.Printf("userID missing from query parameters")
+        c.JSON(http.StatusBadRequest, gin.H{"error": "userID query parameter is required"})
+        return
+    }
+
+    playlistID := c.Query("playlistID")
+    if playlistID == "" {
+        log.Printf("playlistID missing from query parameters")
+        c.JSON(http.StatusBadRequest, gin.H{"error": "playlistID query parameter is required"})
+        return
+    }
+
+    if err := h.spotifyService.DeletePlaylist(userID, playlistID); err != nil {
+        if strings.Contains(err.Error(), "reauthentication required") {
+            c.JSON(http.StatusUnauthorized, gin.H{"error": "authentication_required", "message": "Please reauthenticate with Spotify."})
+            return
+        }
+        c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("error deleting playlist: %v", err)})
+        return
+    }
+
+    c.JSON(http.StatusOK, gin.H{"message": "playlist deleted successfully"})
 }

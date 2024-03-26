@@ -91,7 +91,6 @@ func (h *YouTubeHandler) CallbackHandler(c *gin.Context) {
 }
 
 // Checks YouTube authentication status for a specific user
-// TODO: could we cache the result of this handler?
 func (h *YouTubeHandler) CheckAuthHandler(c *gin.Context) {
     userID := c.Query("userID")
     if userID == "" {
@@ -111,6 +110,8 @@ func (h *YouTubeHandler) CheckAuthHandler(c *gin.Context) {
 // Handles the retrieval of the current user's YouTube playlists
 func (h *YouTubeHandler) GetCurrentUserPlaylistsHandler(c *gin.Context) {
 	userID := c.Query("userID")
+    // pageToken := c.DefaultQuery("pageToken", "")
+
 	if userID == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "userID query parameter is required"})
 		return
@@ -250,4 +251,32 @@ func (h *YouTubeHandler) SearchVideosHandler(c *gin.Context) {
     }
 
     c.JSON(http.StatusOK, searchResponse)
+}
+
+// Handles the deletion of a YouTube playlist
+func (h *YouTubeHandler) DeletePlaylistHandler(c *gin.Context) {
+    userID := c.Query("userID")
+    if userID == "" {
+        log.Printf("userID missing from query parameters")
+        c.JSON(http.StatusBadRequest, gin.H{"error": "userID query parameter is required"})
+        return
+    }
+
+    playlistID := c.Query("playlistID")
+    if playlistID == "" {
+        log.Printf("playlistID missing from query parameters")
+        c.JSON(http.StatusBadRequest, gin.H{"error": "playlistID query parameter is required"})
+        return
+    }
+
+    if err := h.youTubeService.DeletePlaylist(userID, playlistID); err != nil {
+        if strings.Contains(err.Error(), "reauthentication required") {
+            c.JSON(http.StatusUnauthorized, gin.H{"error": "authentication_required", "message": "Please reauthenticate with YouTube (Google)."})
+            return
+        }
+        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+        return
+    }
+
+    c.JSON(http.StatusOK, gin.H{"message": "playlist deleted successfully"})
 }

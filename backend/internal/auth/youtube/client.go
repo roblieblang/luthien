@@ -20,7 +20,10 @@ type YouTubeClient struct {
 }
 
 type YouTubePlaylistsResponse struct {
-	Playlists []Playlist `json:"playlists"`
+    TotalCount      int        `json:"totalCount"`
+    // PrevPageToken   string     `json:"prevPageToken"`
+    // NextPageToken   string     `json:"nextPageToken"`
+    Playlists       []Playlist `json:"playlists"`
 }
 
 type Playlist struct {
@@ -32,11 +35,11 @@ type Playlist struct {
 }
 
 type PlaylistItem struct {
-    ID              string `json:"id"`
-    Title           string `json:"title"`
-    Description     string `json:"description"`
-    ThumbnailURL    string `json:"thumbnailUrl"`
-    VideoID         string `json:"videoId"`
+    ID                        string `json:"id"`
+    Title                     string `json:"title"`
+    Description               string `json:"description"`
+    ThumbnailURL              string `json:"thumbnailUrl"`
+    VideoID                   string `json:"videoId"`
     VideoOwnerChannelTitle    string `json:"videoOwnerChannelTitle"`
 }
 
@@ -80,7 +83,6 @@ func (c *YouTubeClient) RequestToken(payload url.Values) (utils.TokenResponse, e
 }
 
 // Gets the current user's playlists
-// TODO: pagination
 func (c *YouTubeClient) GetCurrentUserPlaylists(accessToken string) (YouTubePlaylistsResponse, error) {
     token := &oauth2.Token{AccessToken: accessToken}
     tokenSource := oauth2.StaticTokenSource(token)
@@ -90,31 +92,45 @@ func (c *YouTubeClient) GetCurrentUserPlaylists(accessToken string) (YouTubePlay
         return YouTubePlaylistsResponse{}, fmt.Errorf("error creating YouTube service: %v", err)
     }
 
-    call := service.Playlists.List([]string{"snippet", "contentDetails"}).Mine(true).MaxResults(50)
-    resp, err := call.Do()
-    if err != nil {
-        return YouTubePlaylistsResponse{}, fmt.Errorf("error making API call: %v", err)
-    }
-
     var playlists []Playlist
-    for _, item := range resp.Items {
-        imageURL := getBestAvailableThumbnailURL(item.Snippet.Thumbnails)
+    var nextPageToken string
+    var totalCount int
+    for {
+        call := service.Playlists.List([]string{"snippet", "contentDetails"}).Mine(true).MaxResults(50).PageToken(nextPageToken)
+        resp, err := call.Do()
+        if err != nil {
+            return YouTubePlaylistsResponse{}, fmt.Errorf("error making API call: %v", err)
+        }
 
-        playlists = append(playlists, Playlist{
-            ID:          item.Id,
-            Title:       item.Snippet.Title,
-            Description: item.Snippet.Description,
-            ImageURL:    imageURL,
-            VideosCount: item.ContentDetails.ItemCount,
-        })
+        for _, item := range resp.Items {
+            imageURL := getBestAvailableThumbnailURL(item.Snippet.Thumbnails)
+
+            playlists = append(playlists, Playlist{
+                ID:          item.Id,
+                Title:       item.Snippet.Title,
+                Description: item.Snippet.Description,
+                ImageURL:    imageURL,
+                VideosCount: item.ContentDetails.ItemCount,
+            })
+        }
+
+        nextPageToken = resp.NextPageToken
+        if nextPageToken == "" {
+            totalCount = int(resp.PageInfo.TotalResults)
+            break
+        }
     }
 
-    return YouTubePlaylistsResponse{Playlists: playlists}, nil
+    return YouTubePlaylistsResponse{
+        TotalCount: totalCount,
+        Playlists:  playlists,
+    }, nil
 }
 
 
+
+
 // Gets a playlist's items
-// TODO: pagination
 func (c *YouTubeClient) GetPlaylistItems(playlistID, accessToken string) (YouTubePlaylistItemsResponse, error) {
     token := &oauth2.Token{AccessToken: accessToken}
     tokenSource := oauth2.StaticTokenSource(token)
@@ -125,28 +141,40 @@ func (c *YouTubeClient) GetPlaylistItems(playlistID, accessToken string) (YouTub
         return YouTubePlaylistItemsResponse{}, fmt.Errorf("error creating YouTube service: %v", err)
     }
 
-    call := service.PlaylistItems.List([]string{"snippet", "contentDetails"}).PlaylistId(playlistID)
-    resp, err := call.Do()
-    if err != nil {
-        return YouTubePlaylistItemsResponse{}, fmt.Errorf("error making API call: %v", err)
-    }
-
     var items []PlaylistItem
-    for _, item := range resp.Items {
-        thumbnailURL := getBestAvailableThumbnailURL(item.Snippet.Thumbnails)
+    var nextPageToken string
 
-        items = append(items, PlaylistItem{
-            ID:                     item.Id,
-            Title:                  item.Snippet.Title,
-            Description:            item.Snippet.Description,
-            ThumbnailURL:           thumbnailURL, // Use safe variable
-            VideoID:                item.ContentDetails.VideoId,
-            VideoOwnerChannelTitle: item.Snippet.VideoOwnerChannelTitle,
-        })
+    for {
+        call := service.PlaylistItems.List([]string{"snippet", "contentDetails"}).
+            PlaylistId(playlistID).MaxResults(50).PageToken(nextPageToken)
+
+        resp, err := call.Do()
+        if err != nil {
+            return YouTubePlaylistItemsResponse{}, fmt.Errorf("error making API call: %v", err)
+        }
+
+        for _, item := range resp.Items {
+            thumbnailURL := getBestAvailableThumbnailURL(item.Snippet.Thumbnails)
+
+            items = append(items, PlaylistItem{
+                ID:                     item.Id,
+                Title:                  item.Snippet.Title,
+                Description:            item.Snippet.Description,
+                ThumbnailURL:           thumbnailURL,
+                VideoID:                item.ContentDetails.VideoId,
+                VideoOwnerChannelTitle: item.Snippet.VideoOwnerChannelTitle,
+            })
+        }
+
+        nextPageToken = resp.NextPageToken
+        if nextPageToken == "" {
+            break
+        }
     }
 
     return YouTubePlaylistItemsResponse{Items: items}, nil
 }
+
 
 // Helper function to determine the best available thumbnail URL
 func getBestAvailableThumbnailURL(thumbnails *youtube.ThumbnailDetails) string {
@@ -218,7 +246,7 @@ type AddItemsToPlaylistPayload struct {
 }
 
 // Adds items to an existing YouTube playlist
-func (c *YouTubeClient) AddItemsToPlaylist (accessToken string, payload AddItemsToPlaylistPayload) error {
+func (c *YouTubeClient) AddItemsToPlaylist(accessToken string, payload AddItemsToPlaylistPayload) error {
     token := &oauth2.Token{AccessToken: accessToken}
     tokenSource := oauth2.StaticTokenSource(token)
     httpClient := oauth2.NewClient(context.Background(), tokenSource)
@@ -263,8 +291,7 @@ type VideoSearchResult struct {
 type VideoID struct {
     VideoID string `json:"videoId"`
 }
-// TODO: handle API quotas. Search is 100x more expensive than all other GET requests used in this project
-
+// TODO: cache search results (search is expensive)
 // Searches for videos on YouTube based on a query
 func (c *YouTubeClient) SearchVideos(accessToken, query string,  maxResults int64) ([]utils.UnifiedTrackSearchResult, error) {
     token := &oauth2.Token{AccessToken: accessToken}
@@ -298,4 +325,24 @@ func (c *YouTubeClient) SearchVideos(accessToken, query string,  maxResults int6
     }
 
     return results, nil
+}
+
+// Deletes the specified YouTube playlist
+func(c *YouTubeClient) DeletePlaylist(accessToken, playlistID string) error {
+    token := &oauth2.Token{AccessToken: accessToken}
+    tokenSource := oauth2.StaticTokenSource(token)
+    httpClient := oauth2.NewClient(context.Background(), tokenSource)
+
+    service, err := youtube.NewService(context.Background(), option.WithHTTPClient(httpClient))
+    if err != nil {
+        log.Printf("error creating new YouTube service: %v", err)
+        return fmt.Errorf("error creating YouTube service: %v", err)
+    }
+
+    call := service.Playlists.Delete(playlistID)
+    err = call.Do()
+    if err != nil {
+        return fmt.Errorf("deleting YouTube playlist: %w", err)
+    }
+    return nil
 }

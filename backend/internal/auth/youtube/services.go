@@ -45,7 +45,7 @@ func (s *YouTubeService) StartLoginFlow() (string, string, error) {
     params.Add("prompt", "consent")
     params.Add("include_granted_scopes", "true")
     params.Add("response_type", "code")
-    params.Add("state", "state_parameter_passthrough_value") // TODO: use a real value
+    params.Add("state", "state_parameter_passthrough_value") // TODO: use a real value (?: maybe)
     params.Add("redirect_uri", s.YouTubeClient.AppContext.EnvConfig.GoogleRedirectURI)
     params.Add("client_id", s.YouTubeClient.AppContext.EnvConfig.GoogleClientID)
 
@@ -139,7 +139,6 @@ func (s *YouTubeService) GetPlaylistItems(userID, playlistID string)  (YouTubePl
         Updater: s.Auth0Service,
     }
     accessToken, err := utils.GetValidAccessToken(params)
-    log.Printf("\nGoogle Access Token: '%s'\n", accessToken)
     if err != nil {
         return YouTubePlaylistItemsResponse{}, err
     }
@@ -156,7 +155,6 @@ func (s *YouTubeService) CreatePlaylist(userID string, payload CreatePlaylistPay
         Updater: s.Auth0Service,
     }
     accessToken, err := utils.GetValidAccessToken(params)
-    log.Printf("YouTubeService.CreatePlaylist() access token: '%s'\n", accessToken)
     if err != nil {
         return nil, err
     }
@@ -194,4 +192,20 @@ func (s *YouTubeService) SearchVideos (userID, artistName, songTitle string) ([]
     }
     query := fmt.Sprintf("%s %s", artistName, songTitle)
     return s.YouTubeClient.SearchVideos(accessToken, query, 1) // maxResults currently hardcoded
+}
+
+// Wrapper service function for DeletePlaylist client function
+func(s *YouTubeService) DeletePlaylist(userID, playlistID string) error{
+    params := utils.GetValidAccessTokenParams{
+        UserID: userID, 
+        Party: "google", 
+        Service: s.YouTubeClient,
+        AppCtx: *s.YouTubeClient.AppContext,
+        Updater: s.Auth0Service,
+    }
+    accessToken, err := utils.GetValidAccessToken(params)
+    if err != nil {
+        return err
+    }
+    return s.YouTubeClient.DeletePlaylist(accessToken, playlistID)
 }

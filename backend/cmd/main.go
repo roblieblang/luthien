@@ -97,7 +97,9 @@ func main() {
     router.GET("/spotify/playlist-tracks", spotifyHandler.GetPlaylistTracksHandler)
     router.POST("/spotify/create-playlist", spotifyHandler.CreatePlaylistHandler)
     router.POST("/spotify/add-items-to-playlist", spotifyHandler.AddItemsToPlaylistHandler)
-    router.GET("/spotify/search-for-track", spotifyHandler.SearchTracksHandler)
+    router.GET("/spotify/search-for-track", spotifyHandler.SearchTracksUsingArtistAndTrackhandler)
+    router.GET("/spotify/search-using-video", spotifyHandler.SearchTracksUsingVideoTitleHandler)
+    router.DELETE("/spotify/delete-playlist", spotifyHandler.DeletePlaylistHandler)
 
     // YouTube setup
     youTubeClient := youtube.NewYouTubeClient(appCtx)
@@ -116,6 +118,7 @@ func main() {
     router.POST("/youtube/create-playlist", youTubeHandler.CreatePlaylistHandler)
     router.POST("/youtube/add-items-to-playlist", youTubeHandler.AddItemsToPlaylistHandler)
     router.GET("/youtube/search-for-video", youTubeHandler.SearchVideosHandler)
+    router.DELETE("/youtube/delete-playlist", youTubeHandler.DeletePlaylistHandler)
 
     // OpenAI setup
     openAIClient := openai.NewOpenAIClient(appCtx)
@@ -135,6 +138,4 @@ func main() {
 	if err := router.Run(":" + envConfig.Port); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}
-
-    // TODO: make sure to serve over HTTPS in production
 }

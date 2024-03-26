@@ -24,6 +24,7 @@ type ExtractArtistAndSongBody struct {
 
 func (h *OpenAIHandler) ExtractArtistAndSongFromVideoTitleHandler(c *gin.Context) {
     var requestBody ExtractArtistAndSongBody
+    log.Printf("OpenAI extraction request body: %v", requestBody)
     if err := c.BindJSON(&requestBody); err != nil {
         c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
         return
