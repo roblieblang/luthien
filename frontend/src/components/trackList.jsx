@@ -8,7 +8,7 @@ const TrackList = ({ playlistID, sourceType }) => {
 
   useEffect(() => {
     if (playlistID && userID) {
-      console.log("tracklist pID and uID:", playlistID, userID)
+      console.log("tracklist pID and uID:", playlistID, userID);
       setIsFetchingTracks(true);
       let url;
       if (sourceType === "spotify") {
@@ -36,13 +36,17 @@ const TrackList = ({ playlistID, sourceType }) => {
             const formattedTracks = data.items.map((item) => {
               if (sourceType === "spotify") {
                 return {
-                  id: item.track.id,
+                  id: item.track.uri,
                   title: item.track.name,
                   thumbnailUrl: item.track.album.images[0].url,
                   artist: item.track.artists
                     .map((artist) => artist.name)
                     .join(", "),
                   album: item.track.album.name,
+                  link: `https://open.spotify.com/${item.track.uri
+                    .split(":")
+                    .slice(1)
+                    .join("/")}`,
                 };
               } else if (sourceType === "youtube") {
                 return {
@@ -50,8 +54,7 @@ const TrackList = ({ playlistID, sourceType }) => {
                   title: item.title,
                   thumbnailUrl: item.thumbnailUrl,
                   channelTitle: item.videoOwnerChannelTitle,
-                  // artist: "",
-                  // album: "",
+                  link: `https://www.youtube.com/watch?v=${item.id}`,
                 };
               }
             });
@@ -79,7 +82,11 @@ const TrackList = ({ playlistID, sourceType }) => {
             alt={track.title}
             className="h-14 w-14 object-cover"
           />
-          <div>{track.title}</div>
+          <div>
+            <a href={track.link} target="_blank" rel="noopener noreferrer">
+              {track.title}
+            </a>
+          </div>
           {track.artist && <div>by {track.artist}</div>}
           {track.album && <div>from {track.album}</div>}
         </li>
