@@ -1,4 +1,5 @@
 import { Route, Routes } from "react-router-dom";
+import ProtectedRoute from "./components/auth0/protectedRoute";
 import Conversion from "./pages/conversion";
 import GoogleCallback from "./pages/googleCallback";
 import Home from "./pages/home";
@@ -11,11 +12,32 @@ export default function App() {
     <>
       <Routes>
         <Route path="/" element={<Home />} />
-        <Route path="/profile" element={<Profile />} />
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <Profile />
+            </ProtectedRoute>
+          }
+        />
         <Route path="/spotify/callback" element={<SpotifyCallback />} />
         <Route path="/google/callback" element={<GoogleCallback />} />
-        <Route path="/music" element={<Music />} />
-        <Route path="/conversion" element={<Conversion />} />
+        <Route
+          path="/music"
+          element={
+            <ProtectedRoute>
+              <Music />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/conversion"
+          element={
+            <ProtectedRoute>
+              <Conversion />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
     </>
   );
