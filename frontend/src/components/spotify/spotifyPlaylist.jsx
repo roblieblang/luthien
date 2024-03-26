@@ -1,3 +1,4 @@
+import DOMPurify from "dompurify";
 import he from "he";
 import { useEffect, useState } from "react";
 import { usePlaylist } from "../../contexts/playlistContext";
@@ -22,12 +23,21 @@ export default function SpotifyPlaylist({ playlist }) {
         <h3 className="text-base font-medium">{he.decode(playlist.name)}</h3>
         <p>Tracks: {playlist.tracks.total}</p>
         <p>Owner: {he.decode(playlist.owner.display_name)}</p>
-        <p>{he.decode(playlist.description) || ""}</p>
+        {/* {playlist.description && (
+          <p>
+            Description:{" "}
+            <span
+              dangerouslySetInnerHTML={{
+                __html: DOMPurify.sanitize(he.decode(playlist.description)),
+              }}
+            />
+          </p>
+        )} */}
       </div>
       <div className="ml-auto flex flex-col justify-between">
         <LinkButton
           to={playlist.external_urls.spotify}
-          text="Open in Spotify"
+          text="Open on Spotify"
         />
         {playlist.tracks.total > 0 && (
           <LinkButton
