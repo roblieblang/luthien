@@ -6,10 +6,8 @@ import YouTubePlaylist from "./youtube/youTubePlaylist";
 
 const services = {
   spotify: {
-    api: ({ userID, limit = "", offset = 0 }) =>
-      `http://localhost:8080/spotify/current-user-playlists?userID=${userID}` +
-      (limit ? `&limit=${limit}` : "") +
-      (offset ? `&offset=${offset}` : ""),
+    api: ({ userID, offset = 0 }) =>
+      `http://localhost:8080/spotify/current-user-playlists?userID=${userID}&offset=${offset}`,
     component: SpotifyPlaylist,
   },
   youtube: {
@@ -21,22 +19,33 @@ const services = {
 
 export default function UserPlaylists({ serviceType }) {
   const [playlists, setPlaylists] = useState([]);
-  const { userID } = useUser();
-  const { playlistsLastUpdated } = usePlaylist();
 
-  const limit = ""; // TODO: Handle pagination
-  const offset = 0;
+  const { userID } = useUser();
+
+  const {
+    playlistsLastUpdated,
+    playlistsListCurrentPage,
+    setPlaylistsListCurrentPage,
+    youTubePlaylistCount,
+    setYouTubePlaylistCount,
+    spotifyPlaylistCount,
+    setSpotifyPlaylistCount,
+    nextPageToken,
+    setNextPageToken,
+    prevPageToken,
+    setPrevPageToken,
+    pageToken, 
+    setPageToken,
+  } = usePlaylist();
 
   useEffect(() => {
+    const offset = (playlistsListCurrentPage - 1) * 20; // 20 playlists per page
+
     if (userID && services[serviceType]) {
-      const { api } = services[serviceType];
-      const apiOptions = { userID };
-      // Optionally add limit and offset for services that use them
-      if (serviceType === "spotify") {
-        apiOptions.limit = limit;
-        apiOptions.offset = offset;
-      }
-      fetch(api(apiOptions))
+      const apiURL = services[serviceType].api({
+        userID, offset
+      })
+      fetch(apiURL)
         .then((res) => {
           if (!res.ok) {
             if (res.status === 401) {
@@ -48,6 +57,13 @@ export default function UserPlaylists({ serviceType }) {
           return res.json();
         })
         .then((data) => {
+          if (serviceType === "spotify") {
+            setSpotifyPlaylistCount(data.total);
+          } else {
+            setYouTubePlaylistCount(data.totalCount);
+            // setNextPageToken(data.nextPageToken || "");
+            // setPrevPageToken(data.prevPageToken || "");
+          }
           const playlistsData =
             serviceType === "spotify" ? data.items : data.playlists;
           console.log("YouTube: ", playlistsData);
@@ -58,7 +74,7 @@ export default function UserPlaylists({ serviceType }) {
           console.error(`Error fetching ${serviceType} user playlists:`, error);
         });
     }
-  }, [userID, serviceType, limit, offset, playlistsLastUpdated]);
+  }, [userID, serviceType, playlistsLastUpdated, playlistsListCurrentPage, pageToken]);
 
   if (playlists == undefined || playlists.length === 0) {
     return <div>Loading playlists...</div>;
