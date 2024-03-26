@@ -20,101 +20,67 @@ export default function Conversion() {
   const { userID } = useUser();
   const { source, destination, title, playlistID } = location.state || {};
 
-  const fetchInitiatedRef = useRef(false);
-
   // TODO: manage loading states with `isFetchingTracks`
-  const fetchArtistAndSong = (videoTitles) => {
-    return fetch("http://localhost:8080/auth/openai/extract-artist-song", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ videoTitles }),
-    })
-      .then((response) => response.json())
-      .catch((error) => console.error("Error:", error));
+
+  const constructSpotifySearchUrlsUsingVideoTitles = (videoTitles) => {
+    return videoTitles.map(
+      (title) =>
+        `http://localhost:8080/spotify/search-using-video?userID=${userID}&videoTitle=${title}`
+    );
   };
 
-  const constructSpotifySearchUrls = (response, userID) => {
-    return response.result.map(({ artistName, songTitle }) => {
-      let url = `http://localhost:8080/spotify/search-for-track?userID=${userID}&limit=1`;
-      if (songTitle) {
-        url += `&trackTitle=${songTitle}`;
-      }
-
-      if (artistName) {
-        url += `&artistName=${artistName}`;
-      }
-
-      return url;
-    });
+  const constructYouTubeSearchUrls = () => {
+    return tracks.map(
+      (track) =>
+        `http://localhost:8080/youtube/search-for-video?userID=${userID}&songTitle=${track.title}&artistName=${track.artist}`
+    );
   };
 
-  useEffect(() => {
-    if (!tracks.length || fetchInitiatedRef.current) return;
-
-    fetchInitiatedRef.current = true;
-    console.log("Trying to search for tracks...");
-
-    const constructSpotifySearchUrlsUsingVideoTitles = (videoTitles) => {
-      return videoTitles.map(
-        (title) =>
-          `http://localhost:8080/spotify/search-using-video?userID=${userID}&videoTitle=${title}`
-      );
-    };
-
-    const constructYouTubeSearchUrls = () => {
-      return tracks.map(
-        (track) =>
-          `http://localhost:8080/youtube/search-for-video?userID=${userID}&songTitle=${track.title}&artistName=${track.artist}`
-      );
-    };
-
-    const initiateSearch = async (searchUrls, artistSongPairs) => {
-      console.log("searchUrls:", searchUrls);
-      try {
-        const results = await Promise.all(
-          searchUrls.map(async (url, index) => {
-            try {
-              const res = await fetch(url);
-              if (res.status === 401) {
-                navigate(`/?${destination}_session_expired=true`, {
-                  replace: true,
-                });
-                throw new Error("401 Unauthorized");
-              }
-              if (res.status === 404) {
-                setSpotifySearchMisses((prevMisses) => [
-                  ...prevMisses,
-                  artistSongPairs[index],
-                ]);
-              }
-              if (!res.ok)
-                throw new Error(`Failed to fetch: ${res.statusText}`);
-              const data = await res.json();
-              if (data.error && data.error === "No tracks found") {
-                setSpotifySearchMisses((prevMisses) => [
-                  ...prevMisses,
-                  artistSongPairs[index],
-                ]);
-                return null;
-              }
-              return data;
-            } catch (error) {
-              console.error(error);
+  const initiateSearch = async (searchUrls, artistSongPairs) => {
+    try {
+      const results = await Promise.all(
+        searchUrls.map(async (url, index) => {
+          try {
+            const res = await fetch(url);
+            if (res.status === 401) {
+              navigate(`/?${destination}_session_expired=true`, {
+                replace: true,
+              });
+              throw new Error("401 Unauthorized");
+            }
+            if (res.status === 404) {
+              setSpotifySearchMisses((prevMisses) => [
+                ...prevMisses,
+                artistSongPairs[index],
+              ]);
+            }
+            if (!res.ok) throw new Error(`Failed to fetch: ${res.statusText}`);
+            const data = await res.json();
+            if (data.error && data.error === "No tracks found") {
+              setSpotifySearchMisses((prevMisses) => [
+                ...prevMisses,
+                artistSongPairs[index],
+              ]);
               return null;
             }
-          })
-        );
+            return data;
+          } catch (error) {
+            console.error(error);
+            return null;
+          }
+        })
+      );
 
-        // Filter out null values (misses) and process search hits
-        const hits = results.filter((result) => result !== null);
-        setSearchHits((prevHits) => [...prevHits, ...hits]);
-      } catch (error) {
-        console.error("Error searching for tracks", error);
-      }
-    };
+      // Filter out null values (misses) and process search hits
+      const hits = results.filter((result) => result !== null);
+      setSearchHits((prevHits) => [...prevHits, ...hits]);
+    } catch (error) {
+      console.error("Error searching for tracks", error);
+    }
+  };
 
+  const handleConvertClick = () => {
+    setIsModalOpen(true);
     if (destination === "YouTube") {
       const searchUrls = constructYouTubeSearchUrls();
 
@@ -142,17 +108,8 @@ export default function Conversion() {
         artistName: "",
       }));
       initiateSearch(searchUrls, pairs);
-
-      // fetchArtistAndSong(videoTitles)
-      //   .then((response) => {
-      //     const searchUrls = constructSpotifySearchUrls(response, userID);
-      //     initiateSearch(searchUrls, response.result);
-      //   })
-      //   .catch((error) =>
-      //     console.error("Error fetching artist and song:", error)
-      //   );
     }
-  }, [destination, title, userID, tracks]);
+  };
 
   useEffect(() => {
     return () => {
@@ -172,22 +129,13 @@ export default function Conversion() {
     }
   }, [source, title, destination, navigate]);
 
-  const handleOpenModal = () => {
-    setIsModalOpen(true);
-  };
-
-  console.log("tracks:", tracks);
-
-  console.log("searchHits", searchHits);
-  console.log("conversion page search misses:", spotifySearchMisses);
-
   return (
     <div className="py-5 mb-5">
       <BasicHeading
         text={`Convert'${title}' from ${source} to ${destination}`}
       />
       <TrackList playlistID={playlistID} sourceType={source.toLowerCase()} />
-      <LinkButton text="Convert" onClick={handleOpenModal} />
+      <LinkButton text="Convert" onClick={handleConvertClick} />
       <div className="my-5">
         <LinkButton to="/music" text="Back" />
       </div>
