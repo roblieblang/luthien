@@ -46,7 +46,7 @@ export default function ConversionModal({
         console.error("Error fetching Spotify user profile:", error);
       });
   };
-  // TODO: extract endpoint urls to config file in prod
+
   const createNewSpotifyPlaylist = async () => {
     let spotifyUserId;
     if (!spotifyUserID) {
@@ -116,10 +116,11 @@ export default function ConversionModal({
       console.error("Error adding items to playlist:", response.statusText);
       const errorData = await response.json();
       console.error("Error details:", errorData);
+      await rollbackPlaylistCreation(newPlaylistId, "spotify");
       return false;
     }
   };
-  // TODO: troubleshoot empty application userid and spotify user id. something's not persisiting in context...
+
   const createNewYouTubePlaylist = async () => {
     const url = `http://localhost:8080/youtube/create-playlist`;
     const payload = {
@@ -148,7 +149,7 @@ export default function ConversionModal({
       return;
     }
   };
-  // TODO: delete new playlist if addTo<service>Playlist fails
+
   const addToNewYouTubePlaylist = async (newPlaylistId) => {
     const url = `http://localhost:8080/youtube/add-items-to-playlist`;
     const videoIds = adjustedSearchHits.map((track) => track.id);
@@ -159,7 +160,6 @@ export default function ConversionModal({
         videoIds: videoIds,
       },
     };
-    console.log("add items to yt p payload: ", payload);
     const response = await fetch(url, {
       method: "POST",
       headers: {
@@ -173,8 +173,26 @@ export default function ConversionModal({
       console.error("Error adding items to playlist:", response.statusText);
       const errorData = await response.json();
       console.error("Error details:", errorData);
+      await rollbackPlaylistCreation(newPlaylistId, "youtube");
       return false;
     }
+  };
+
+  const rollbackPlaylistCreation = async (newPlaylistId, service) => {
+    const url = `http://localhost:8080/${service}/delete-playlist?userID=${userID}&playlistID=${newPlaylistId}`;
+    const response = await fetch(url, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    if (!response.ok) {
+      console.error("Error deleting failed conversion:", response.statusText);
+      const errorData = await response.json();
+      console.error("Error details:", errorData);
+      return false;
+    }
+    return true;
   };
 
   // TODO: add loading state
@@ -186,7 +204,9 @@ export default function ConversionModal({
 
       if (!newPlaylistId) {
         console.error("Failed to create the playlist.");
-        showErrorToast("Error during conversion process. Please try again.");
+        showErrorToast(
+          "Error during conversion process. Please try again later."
+        );
         return;
       }
 
@@ -195,13 +215,18 @@ export default function ConversionModal({
         : addToNewYouTubePlaylist(newPlaylistId));
       if (!tracksAddedSuccessfully) {
         console.error("Failed to add tracks to the playlist.");
-        showErrorToast("Error during conversion process. Please try again.");
+        showErrorToast(
+          "Error during conversion process. Please try again later."
+        );
         return;
       }
       // Conversion success
       setPlaylistsLastUpdated(Date.now());
       // Wait for all backend operations to complete before redirecting and refetching playlists
-      sessionStorage.setItem("conversionStatus", "complete");
+      sessionStorage.setItem(
+        "conversionStatus",
+        `complete:'${playlistTitle}', ${source} ==> ${destination}`
+      );
       setTimeout(() => {
         navigate("/music");
         // TODO: add loading indicator
@@ -235,8 +260,6 @@ export default function ConversionModal({
   }, [searchHits, spotifySearchMisses]);
 
   if (!isOpen) return null;
-
-  // TODO: display conversion progress
 
   if (!adjustedSearchHits || adjustedSearchHits.length === 0) {
     return <div>Loading...</div>;
@@ -283,9 +306,7 @@ export default function ConversionModal({
               </h2>
               <ul>
                 {adjustedSearchMisses.map((miss, index) => (
-                  <li key={`miss-${index}`}>
-                    {he.decode(miss.songTitle)} by {he.decode(miss.artistName)}
-                  </li>
+                  <li key={`miss-${index}`}>{he.decode(miss.songTitle)}</li>
                 ))}
               </ul>
             </div>
