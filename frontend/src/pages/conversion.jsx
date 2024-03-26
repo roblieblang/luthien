@@ -23,8 +23,6 @@ export default function Conversion() {
   const fetchInitiatedRef = useRef(false);
 
   // TODO: manage loading states with `isFetchingTracks`
-  // TODO: handle 3rd party usage quotas on frontend (as well as backend)
-
   const fetchArtistAndSong = (videoTitles) => {
     return fetch("http://localhost:8080/auth/openai/extract-artist-song", {
       method: "POST",
@@ -40,7 +38,6 @@ export default function Conversion() {
   const constructSpotifySearchUrls = (response, userID) => {
     return response.result.map(({ artistName, songTitle }) => {
       let url = `http://localhost:8080/spotify/search-for-track?userID=${userID}&limit=1`;
-
       if (songTitle) {
         url += `&trackTitle=${songTitle}`;
       }
@@ -59,11 +56,19 @@ export default function Conversion() {
     fetchInitiatedRef.current = true;
     console.log("Trying to search for tracks...");
 
-    const constructYouTubeSearchUrls = () =>
-      tracks.map(
+    const constructSpotifySearchUrlsUsingVideoTitles = (videoTitles) => {
+      return videoTitles.map(
+        (title) =>
+          `http://localhost:8080/spotify/search-using-video?userID=${userID}&videoTitle=${title}`
+      );
+    };
+
+    const constructYouTubeSearchUrls = () => {
+      return tracks.map(
         (track) =>
           `http://localhost:8080/youtube/search-for-video?userID=${userID}&songTitle=${track.title}&artistName=${track.artist}`
       );
+    };
 
     const initiateSearch = async (searchUrls, artistSongPairs) => {
       console.log("searchUrls:", searchUrls);
@@ -111,10 +116,7 @@ export default function Conversion() {
     };
 
     if (destination === "YouTube") {
-      const searchUrls = tracks.map(
-        (track) =>
-          `http://localhost:8080/youtube/search-for-video?userID=${userID}&songTitle=${track.title}&artistName=${track.artist}`
-      );
+      const searchUrls = constructYouTubeSearchUrls();
 
       const artistSongPairs = tracks.map((track) => [
         track.artist,
@@ -123,14 +125,32 @@ export default function Conversion() {
       initiateSearch(searchUrls, artistSongPairs); // Adjusted to pass artistSongPairs
     } else {
       const videoTitles = tracks.map((track) => track.title);
-      fetchArtistAndSong(videoTitles)
-        .then((response) => {
-          const searchUrls = constructSpotifySearchUrls(response, userID);
-          initiateSearch(searchUrls, response.result);
-        })
-        .catch((error) =>
-          console.error("Error fetching artist and song:", error)
+      const cleanedVideoTitles = videoTitles.map((title) =>
+        // eslint-disable-next-line no-useless-escape
+        title.replace(/[.,\/#!$%\^&\*;:{}=\-_`'~()\[\]【】『』]/g, "").trim()
+      );
+
+      for (let i = 0; i < videoTitles.length; i++) {
+        console.log(
+          `before cleaning: ${videoTitles[i]} => after: ${cleanedVideoTitles[i]}`
         );
+      }
+      const searchUrls =
+        constructSpotifySearchUrlsUsingVideoTitles(cleanedVideoTitles);
+      const pairs = cleanedVideoTitles.map((title) => ({
+        songTitle: title,
+        artistName: "",
+      }));
+      initiateSearch(searchUrls, pairs);
+
+      // fetchArtistAndSong(videoTitles)
+      //   .then((response) => {
+      //     const searchUrls = constructSpotifySearchUrls(response, userID);
+      //     initiateSearch(searchUrls, response.result);
+      //   })
+      //   .catch((error) =>
+      //     console.error("Error fetching artist and song:", error)
+      //   );
     }
   }, [destination, title, userID, tracks]);
 
@@ -155,7 +175,7 @@ export default function Conversion() {
   const handleOpenModal = () => {
     setIsModalOpen(true);
   };
-  
+
   console.log("tracks:", tracks);
 
   console.log("searchHits", searchHits);
@@ -168,6 +188,9 @@ export default function Conversion() {
       />
       <TrackList playlistID={playlistID} sourceType={source.toLowerCase()} />
       <LinkButton text="Convert" onClick={handleOpenModal} />
+      <div className="my-5">
+        <LinkButton to="/music" text="Back" />
+      </div>
       <ConversionModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
