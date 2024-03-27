@@ -11,6 +11,7 @@ import (
 
 	"github.com/roblieblang/luthien/backend/internal/utils"
 	"golang.org/x/oauth2"
+	"google.golang.org/api/googleapi"
 	"google.golang.org/api/option"
 	"google.golang.org/api/youtube/v3"
 )
@@ -27,11 +28,13 @@ type YouTubePlaylistsResponse struct {
 }
 
 type Playlist struct {
-    ID          string `json:"id"`
-    Title       string `json:"title"`
-    Description string `json:"description"`
-    ImageURL    string `json:"imageUrl"`
-    VideosCount int64  `json:"videosCount"`
+    ID              string `json:"id"`
+    Title           string `json:"title"`
+    Description     string `json:"description"`
+    ImageURL        string `json:"imageUrl"`
+    VideosCount     int64  `json:"videosCount"`
+    ChannelTitle    string `json:"channelTitle"`
+    PrivacyStatus   string `json:"privacyStatus"`
 }
 
 type PlaylistItem struct {
@@ -99,18 +102,32 @@ func (c *YouTubeClient) GetCurrentUserPlaylists(accessToken string) (YouTubePlay
         call := service.Playlists.List([]string{"snippet", "contentDetails"}).Mine(true).MaxResults(50).PageToken(nextPageToken)
         resp, err := call.Do()
         if err != nil {
+            googleAPIError, ok := err.(*googleapi.Error)
+            if ok && googleAPIError.Code == 403 {
+                return YouTubePlaylistsResponse{}, fmt.Errorf("YouTube API quota exceeded: %v", err)
+            }
             return YouTubePlaylistsResponse{}, fmt.Errorf("error making API call: %v", err)
         }
 
         for _, item := range resp.Items {
-            imageURL := getBestAvailableThumbnailURL(item.Snippet.Thumbnails)
-
+            var imageURL string
+            if item.Snippet != nil && item.Snippet.Thumbnails != nil {
+                imageURL = getBestAvailableThumbnailURL(item.Snippet.Thumbnails)
+            }
+    
+            var privacyStatus string
+            if item.Status != nil {
+                privacyStatus = item.Status.PrivacyStatus
+            }
+        
             playlists = append(playlists, Playlist{
-                ID:          item.Id,
-                Title:       item.Snippet.Title,
-                Description: item.Snippet.Description,
-                ImageURL:    imageURL,
-                VideosCount: item.ContentDetails.ItemCount,
+                ID:             item.Id,
+                Title:          item.Snippet.Title,
+                Description:    item.Snippet.Description,
+                ImageURL:       imageURL,
+                VideosCount:    item.ContentDetails.ItemCount,
+                PrivacyStatus:  privacyStatus,
+                ChannelTitle:   item.Snippet.ChannelTitle,
             })
         }
 
@@ -150,6 +167,10 @@ func (c *YouTubeClient) GetPlaylistItems(playlistID, accessToken string) (YouTub
 
         resp, err := call.Do()
         if err != nil {
+            googleAPIError, ok := err.(*googleapi.Error)
+            if ok && googleAPIError.Code == 403 {
+                return YouTubePlaylistItemsResponse{}, fmt.Errorf("YouTube API quota exceeded: %v", err)
+            }
             return YouTubePlaylistItemsResponse{}, fmt.Errorf("error making API call: %v", err)
         }
 
@@ -234,6 +255,10 @@ func (c *YouTubeClient) CreatePlaylist(accessToken string, payload CreatePlaylis
     createdPlaylist, err := call.Do()
     if err != nil {
         log.Printf("Error creating YouTube playlist: %v", err)
+        googleAPIError, ok := err.(*googleapi.Error)
+            if ok && googleAPIError.Code == 403 {
+                return nil, fmt.Errorf("YouTube API quota exceeded: %v", err)
+            }
         return nil, fmt.Errorf("error creating YouTube playlist: %v", err)
     }
 
@@ -269,6 +294,10 @@ func (c *YouTubeClient) AddItemsToPlaylist(accessToken string, payload AddItemsT
         call := service.PlaylistItems.Insert([]string{"snippet"}, playlistItem)
         _, err := call.Do()
         if err != nil {
+            googleAPIError, ok := err.(*googleapi.Error)
+            if ok && googleAPIError.Code == 403 {
+                return fmt.Errorf("YouTube API quota exceeded: %v", err)
+            }
             return fmt.Errorf("error adding item to YouTube playlist: %v", err)
         }
     }
@@ -291,7 +320,7 @@ type VideoSearchResult struct {
 type VideoID struct {
     VideoID string `json:"videoId"`
 }
-// TODO: cache search results (search is expensive)
+
 // Searches for videos on YouTube based on a query
 func (c *YouTubeClient) SearchVideos(accessToken, query string,  maxResults int64) ([]utils.UnifiedTrackSearchResult, error) {
     token := &oauth2.Token{AccessToken: accessToken}
@@ -308,6 +337,10 @@ func (c *YouTubeClient) SearchVideos(accessToken, query string,  maxResults int6
     resp, err := call.Do()
     if err != nil {
         log.Printf("error searching for YouTube video: %v", err)
+        googleAPIError, ok := err.(*googleapi.Error)
+        if ok && googleAPIError.Code == 403 {
+            return nil, fmt.Errorf("YouTube API quota exceeded: %v", err)
+        }
         return nil, fmt.Errorf("error making API call: %v", err)
     }
 
@@ -342,6 +375,10 @@ func(c *YouTubeClient) DeletePlaylist(accessToken, playlistID string) error {
     call := service.Playlists.Delete(playlistID)
     err = call.Do()
     if err != nil {
+        googleAPIError, ok := err.(*googleapi.Error)
+        if ok && googleAPIError.Code == 403 {
+            return fmt.Errorf("YouTube API quota exceeded: %v", err)
+        }
         return fmt.Errorf("deleting YouTube playlist: %w", err)
     }
     return nil

@@ -120,10 +120,20 @@ func (h *YouTubeHandler) GetCurrentUserPlaylistsHandler(c *gin.Context) {
 	userPlaylists, err := h.youTubeService.GetCurrentUserPlaylists(userID)
 	if err != nil {
 		log.Printf("Error retrieving YouTube playlists: %v", err)
+        
+        if strings.Contains(err.Error(), "YouTube API quota exceeded") {
+            c.JSON(http.StatusForbidden, gin.H{
+                "error": "quota_exceeded",
+                "message": "You have exceeded your YouTube API quota.",
+            })
+            return
+        }
+
         if strings.Contains(err.Error(), "reauthentication required") {
             c.JSON(http.StatusUnauthorized, gin.H{"error": "authentication_required", "message": "Please reauthenticate with YouTube (Google)."})
             return
         }
+
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve user playlists"})
 		return
 	}
@@ -148,6 +158,15 @@ func (h *YouTubeHandler) GetPlaylistItemsHandler(c *gin.Context) {
 	userPlaylists, err := h.youTubeService.GetPlaylistItems(userID, playlistID)
 	if err != nil {
 		log.Printf("Error retrieving YouTube playlist items: %v", err)
+
+        if strings.Contains(err.Error(), "YouTube API quota exceeded") {
+            c.JSON(http.StatusForbidden, gin.H{
+                "error": "quota_exceeded",
+                "message": "You have exceeded your YouTube API quota.",
+            })
+            return
+        }
+
         if strings.Contains(err.Error(), "reauthentication required") {
             c.JSON(http.StatusUnauthorized, gin.H{"error": "authentication_required", "message": "Please reauthenticate with YouTube (Google)."})
             return
@@ -178,6 +197,15 @@ func(h *YouTubeHandler) CreatePlaylistHandler(c *gin.Context) {
     }
     createdPlaylist, err := h.youTubeService.CreatePlaylist(playlistData.UserID, playlistData.Payload)
     if err != nil {
+
+        if strings.Contains(err.Error(), "YouTube API quota exceeded") {
+            c.JSON(http.StatusForbidden, gin.H{
+                "error": "quota_exceeded",
+                "message": "You have exceeded your YouTube API quota.",
+            })
+            return
+        }
+
         if strings.Contains(err.Error(), "reauthentication required") {
             c.JSON(http.StatusUnauthorized, gin.H{"error": "authentication_required", "message": "Please reauthenticate with YouTube (Google)."})
             return
@@ -208,6 +236,15 @@ func(h *YouTubeHandler) AddItemsToPlaylistHandler(c *gin.Context) {
 
     if err := h.youTubeService.AddItemsToPlaylist(addItemsData.UserID, addItemsData.Payload); err != nil {
         errMsg := err.Error()
+
+        if strings.Contains(errMsg, "YouTube API quota exceeded") {
+            c.JSON(http.StatusForbidden, gin.H{
+                "error": "quota_exceeded",
+                "message": "You have exceeded your YouTube API quota.",
+            })
+            return
+        }
+
         if strings.Contains(errMsg, "reauthentication required") {
             c.JSON(http.StatusUnauthorized, gin.H{"error": "authentication_required", "message": "Please reauthenticate with YouTube (Google)."})
             return
@@ -242,11 +279,21 @@ func (h *YouTubeHandler) SearchVideosHandler(c *gin.Context) {
     // Assuming `SearchVideos` method has been adjusted to handle queries with either artistName, songTitle, or both.
     searchResponse, err := h.youTubeService.SearchVideos(userID, artistName, songTitle)
     if err != nil {
-        if strings.Contains(err.Error(), "reauthentication required") {
+        errMsg := err.Error()
+
+        if strings.Contains(errMsg, "YouTube API quota exceeded") {
+            c.JSON(http.StatusForbidden, gin.H{
+                "error": "quota_exceeded",
+                "message": "You have exceeded your YouTube API quota.",
+            })
+            return
+        }
+
+        if strings.Contains(errMsg, "reauthentication required") {
             c.JSON(http.StatusUnauthorized, gin.H{"error": "authentication_required", "message": "Please reauthenticate with YouTube (Google)."})
             return
         }
-        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+        c.JSON(http.StatusInternalServerError, gin.H{"error": errMsg})
         return
     }
 
@@ -270,11 +317,21 @@ func (h *YouTubeHandler) DeletePlaylistHandler(c *gin.Context) {
     }
 
     if err := h.youTubeService.DeletePlaylist(userID, playlistID); err != nil {
-        if strings.Contains(err.Error(), "reauthentication required") {
+        errMsg := err.Error()
+
+        if strings.Contains(errMsg, "YouTube API quota exceeded") {
+            c.JSON(http.StatusForbidden, gin.H{
+                "error": "quota_exceeded",
+                "message": "You have exceeded your YouTube API quota.",
+            })
+            return
+        }
+
+        if strings.Contains(errMsg, "reauthentication required") {
             c.JSON(http.StatusUnauthorized, gin.H{"error": "authentication_required", "message": "Please reauthenticate with YouTube (Google)."})
             return
         }
-        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+        c.JSON(http.StatusInternalServerError, gin.H{"error": errMsg})
         return
     }
 

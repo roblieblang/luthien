@@ -2,11 +2,13 @@ package youtube
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"log"
 	"net/url"
 	"time"
-    "log"
 
+	"github.com/redis/go-redis/v9"
 	"github.com/roblieblang/luthien/backend/internal/auth/auth0"
 	"github.com/roblieblang/luthien/backend/internal/utils"
 	"google.golang.org/api/youtube/v3"
@@ -177,8 +179,40 @@ func (s *YouTubeService) AddItemsToPlaylist(userID string, payload AddItemsToPla
     return s.YouTubeClient.AddItemsToPlaylist(accessToken, payload)
 }
 
+// Caches a YouTube search response in Redis
+func (s *YouTubeService) cacheSearchResponse(query string, response []utils.UnifiedTrackSearchResult) error {
+    jsonData, err := json.Marshal(response)
+    if err != nil {
+        return err
+    }
+
+    if err := s.YouTubeClient.AppContext.RedisClient.Set(context.Background(), query, jsonData, 24*time.Hour).Err(); err != nil {
+        return err
+    }
+
+    return nil
+}
+
+// Retrieves a cached search response from Redis
+func (s *YouTubeService) retrieveSearchResponse(query string) ([]utils.UnifiedTrackSearchResult, error){
+    cachedData, err := s.YouTubeClient.AppContext.RedisClient.Get(context.Background(), query).Result()
+    if err == redis.Nil {
+        log.Printf("Redis cache miss for query: %s", query)
+        return nil, nil
+    } else if err != nil {
+        return nil, err
+    }
+
+    var results []utils.UnifiedTrackSearchResult
+    if err := json.Unmarshal([]byte(cachedData), &results); err != nil {
+        return nil, err
+    }
+
+    return results, nil
+}
+
 // Wrapper service function for SearchVideos client function
-func (s *YouTubeService) SearchVideos (userID, artistName, songTitle string) ([]utils.UnifiedTrackSearchResult, error) {
+func (s *YouTubeService) SearchVideos(userID, artistName, songTitle string) ([]utils.UnifiedTrackSearchResult, error) {
     params := utils.GetValidAccessTokenParams{
         UserID: userID, 
         Party: "google", 
@@ -190,8 +224,32 @@ func (s *YouTubeService) SearchVideos (userID, artistName, songTitle string) ([]
     if err != nil {
         return nil, err
     }
+
     query := fmt.Sprintf("%s %s", artistName, songTitle)
-    return s.YouTubeClient.SearchVideos(accessToken, query, 1) // maxResults currently hardcoded
+    log.Printf("Trying to get cached results from Redis for query: %s", query)
+    cachedResults, err := s.retrieveSearchResponse(query)
+    if err != nil {
+        log.Printf("Error retrieving cached search response from Redis with query %s. error: %v", query, err)
+    }
+    if cachedResults != nil {
+        log.Printf("Retrieved cached results from Redis: %v", cachedResults)
+        return cachedResults, nil
+    }
+
+    log.Printf("No results in cache, fetching new ones for: %s", query)
+    newResults, err := s.YouTubeClient.SearchVideos(accessToken, query, 1) // maxResults currently hardcoded
+    if err != nil {
+        log.Printf("Error searching for videos: %v", err)
+        return []utils.UnifiedTrackSearchResult{}, err
+    }
+    
+    log.Printf("Caching new search results %v for query %s", newResults, query)
+    err = s.cacheSearchResponse(query, newResults)
+    if err != nil {
+        log.Printf("Error caching new search results: %v", err)
+        return []utils.UnifiedTrackSearchResult{}, err
+    }
+    return newResults, nil 
 }
 
 // Wrapper service function for DeletePlaylist client function

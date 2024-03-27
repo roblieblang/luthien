@@ -1,5 +1,6 @@
 import he from "he";
 import { useEffect, useState } from "react";
+import { Bars } from "react-loader-spinner";
 import { useNavigate } from "react-router-dom";
 import { usePlaylist } from "../../../contexts/playlistContext";
 import { useUser } from "../../../contexts/userContext";
@@ -39,7 +40,6 @@ export default function ConversionModal({
       .then((data) => {
         updateSpotifyUserID(data.id);
         sessionStorage.setItem("spotifyUserId", data.id);
-        console.log("fetched spotify user profile id:", data.id);
         return data.id;
       })
       .catch((error) => {
@@ -50,14 +50,8 @@ export default function ConversionModal({
   const createNewSpotifyPlaylist = async () => {
     let spotifyUserId;
     if (!spotifyUserID) {
-      console.log(
-        "SpotifyUserID missing from context. Trying session storage..."
-      );
       spotifyUserId = sessionStorage.getItem("spotifyUserId");
       if (!spotifyUserId) {
-        console.log(
-          "spotifyUserId missing from session storage. Fetching a new one..."
-        );
         spotifyUserId = await fetchSpotifyUserId();
       }
     }
@@ -72,7 +66,6 @@ export default function ConversionModal({
         description: stockDescription,
       },
     };
-    console.log("create spotify playlist payload:", payload);
     const response = await fetch(url, {
       method: "POST",
       headers: {
@@ -85,9 +78,8 @@ export default function ConversionModal({
       const data = await response.json();
       return data.newPlaylistId;
     } else {
-      console.error("Error creating playlist:", response.statusText);
       const errorData = await response.json();
-      console.error("Error details:", errorData);
+      console.error("Error creating playlist:", response.statusText, errorData);
       return;
     }
   };
@@ -113,9 +105,12 @@ export default function ConversionModal({
     if (response.ok) {
       return true;
     } else {
-      console.error("Error adding items to playlist:", response.statusText);
       const errorData = await response.json();
-      console.error("Error details:", errorData);
+      console.error(
+        "Error adding to playlist:",
+        response.statusText,
+        errorData
+      );
       await rollbackPlaylistCreation(newPlaylistId, "spotify");
       return false;
     }
@@ -143,9 +138,11 @@ export default function ConversionModal({
       const data = await response.json();
       return data.id;
     } else {
-      console.error("Error creating playlist:", response.statusText);
       const errorData = await response.json();
-      console.error("Error details:", errorData);
+      console.error("Error creating playlist:", response.statusText, errorData);
+      if (response.status === 403) {
+        window.location.href = `/?youtube_quota_exceeded=true&operation=playlist-create`;
+      }
       return;
     }
   };
@@ -170,10 +167,16 @@ export default function ConversionModal({
     if (response.ok) {
       return true;
     } else {
-      console.error("Error adding items to playlist:", response.statusText);
       const errorData = await response.json();
-      console.error("Error details:", errorData);
+      console.error(
+        "Error adding to playlist:",
+        response.statusText,
+        errorData
+      );
       await rollbackPlaylistCreation(newPlaylistId, "youtube");
+      if (response.status === 403) {
+        window.location.href = `/?youtube_quota_exceeded=true&operation=add-to-playlist`;
+      }
       return false;
     }
   };
@@ -187,15 +190,17 @@ export default function ConversionModal({
       },
     });
     if (!response.ok) {
-      console.error("Error deleting failed conversion:", response.statusText);
       const errorData = await response.json();
-      console.error("Error details:", errorData);
+      console.error(
+        "Error deleting failed conversion:",
+        response.statusText,
+        errorData
+      );
       return false;
     }
     return true;
   };
 
-  // TODO: add loading state
   const finalizeConversion = async () => {
     try {
       let newPlaylistId = await (destination === "Spotify"
@@ -229,9 +234,7 @@ export default function ConversionModal({
       );
       setTimeout(() => {
         navigate("/music");
-        // TODO: add loading indicator
       }, 1000);
-      console.log("Playlist created and tracks added successfully.");
     } catch (error) {
       showErrorToast("Error during conversion process. Please try again.");
       console.error("Error during the finalize conversion process:", error);
@@ -241,28 +244,34 @@ export default function ConversionModal({
   useEffect(() => {
     if (searchHits && searchHits.length > 0) {
       const transformedHits = searchHits.map((hit) => {
-        // console.log("hit before transform: ", hit[0]);
         const newHit = JSON.parse(JSON.stringify(hit[0]));
         return newHit;
-        // console.log("hit after transform: ", newHit);
       });
       setAdjustedSearchHits(transformedHits);
     }
     if (spotifySearchMisses && spotifySearchMisses.length > 0) {
-      console.log("modal misses:", spotifySearchMisses);
       const transformedMisses = spotifySearchMisses.map((miss) => {
         const newMiss = JSON.parse(JSON.stringify(miss));
         return newMiss;
       });
       setAdjustedSearchMisses(transformedMisses);
-      console.log("modal adj search misses: ", adjustedSearchMisses);
     }
   }, [searchHits, spotifySearchMisses]);
 
   if (!isOpen) return null;
 
   if (!adjustedSearchHits || adjustedSearchHits.length === 0) {
-    return <div>Loading...</div>;
+    return (
+      <div className="flex mt-3 items-center justify-center">
+        <Bars
+          height="70"
+          width="70"
+          color="#e2714a"
+          ariaLabel="bars-loading"
+          visible={true}
+        />
+      </div>
+    );
   }
 
   return (

@@ -2,33 +2,31 @@ import he from "he";
 import { useState } from "react";
 import { usePlaylist } from "../../contexts/playlistContext";
 import LinkButton from "../general/buttons/linkButton";
-import TrackList from "../trackList";
+import TrackList from "../general/trackList";
 
 export default function YouTubePlaylist({ playlist }) {
-  const { setPlaylistDetails, tracks, isFetchingTracks } = usePlaylist();
-  // TODO: condense UI for both playlist types
   return (
-    <div className="bg-slate-600 border border-yellow-600 border-solid p-4 m-2 flex w-10/12">
-      <div className="flex-1 text-left">
+    <div className="bg-customBG rounded border-customParagraph border-solid border-2 p-2 my-0.5 flex flex-col w-11/12">
+      <div className="flex items-center justify-between mb-2">
         {playlist.imageUrl && (
           <img
             src={playlist.imageUrl}
             alt={playlist.title}
-            className="h-16 w-16 object-cover"
+            className="h-16 w-16 object-cover border-2 rounded"
           />
         )}
-        <h3 className="text-base font-medium">{he.decode(playlist.title)}</h3>
-        <p>Tracks: {playlist.videosCount}</p>
-        {/* TODO: show description on hover like a tooltip */}
-        {/* <p>Description: {he.decode(playlist.description) || ""}</p> */}
-      </div>
-      <div className="ml-auto flex flex-col justify-between">
-        <LinkButton
-          to={`https://www.youtube.com/playlist?list=${playlist.id}`}
-          text="Open on YouTube"
-        />
+        <a
+          href={`https://www.youtube.com/playlist?list=${playlist.id}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-block ml-1"
+        >
+          <h3 className="text-sm font-bold text-slate-200 hover:text-blue-500">
+            {he.decode(playlist.title)}
+          </h3>
+        </a>
         {playlist.videosCount > 0 && (
-          <>
+          <div className="ml-2">
             <LinkButton
               to={{
                 pathname: "/conversion",
@@ -39,10 +37,23 @@ export default function YouTubePlaylist({ playlist }) {
                   playlistID: playlist.id,
                 },
               }}
-              text="Select Playlist"
+              text="Select"
             />
-          </>
+          </div>
         )}
+      </div>
+      <div className="text-xs ">
+        <span>
+          {playlist.videosCount}{" "}
+          {playlist.videosCount === 1 ? "track" : "tracks"}
+        </span>
+        <span className="mx-2">•</span>
+        <span>Created by {he.decode(playlist.channelTitle)}</span>
+        <span className="mx-2">•</span>
+        <span>
+          {playlist.privacyStatus.charAt(0).toUpperCase() +
+            playlist.privacyStatus.slice(1)}
+        </span>
       </div>
     </div>
   );
