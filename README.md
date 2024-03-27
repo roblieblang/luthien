@@ -2,8 +2,18 @@
 
 ## Overview
 I built a playlist conversion application for cross-platform listening between Spotify and YouTube.
-- [Try here (awaiting verification by API providers)](https://google.com) 
-- [Video (coming soon)](https://www.google.com/)
+<ul>
+  <li>
+    <a href="" target="_blank">
+      Try here (awaiting verification by API providers)
+    </a>
+  </li>
+  <li>
+    <a href="" target="_blank">
+      Video (coming soon)
+    </a>
+  </li>
+</ul>
 
 ## Features
 - Complete integration with Spotify API and YouTube Data API
