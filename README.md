@@ -1,18 +1,38 @@
-# Luthien (work in progress)
+# Luthien
 
 ## Overview
+I built a playlist conversion application for cross-platform listening between Spotify and YouTube.
+- [Try here (awaiting verification by API providers)](https://google.com) 
+- [Video (coming soon)](https://www.google.com/)
 
-Playlist conversion tool for Spotify and YouTube. There and back again.
+## Features
+- Complete integration with Spotify API and YouTube Data API
+- Robust Redis Caching strategies for expensive 3rd party API calls (such as search)
+- Responsive design
+- Full authentication integrated with Auth0
 
-## Requirements
+## Technologies Used
+### Backend
+- Go
+- Gin
+- Redis
+- Google Cloud Platform
+- Upstash
+### Frontend
+- JavaScript
+- React
+- Tailwind
+- Auth0
+- Vercel
 
+## Local Setup
+### Requirements
 - Docker
-
-## Backend
-
+### Backend
 1. Run `docker-compose up --build` from the root of `./backend` to start Redis and MongoDB
 2. Start the server from `./backend` with command `air` for live reloading
 
-## Frontend
-
+### Frontend
 1. Start the dev server from `./frontend` directory with command `npm run dev`
+
+
