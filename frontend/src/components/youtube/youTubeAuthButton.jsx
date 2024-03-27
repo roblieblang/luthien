@@ -1,4 +1,5 @@
 import { useAuth0 } from "@auth0/auth0-react";
+import { FaYoutube } from "react-icons/fa";
 import { useUser } from "../../contexts/userContext";
 
 export default function YouTubeAuthButton() {
@@ -42,17 +43,23 @@ export default function YouTubeAuthButton() {
     <div>
       {youTubeAuthStatus ? (
         <button
-          className="bg-customHeadline hover:bg-customButton text-xs text-customStroke hover:text-slate-800 font-bold py-1 px-2 my-6 rounded-md border border-black"
+          className="bg-customHeadline hover:bg-customButton text-md text-customStroke hover:text-red-700 font-bold py-1 px-2 rounded-md border border-black flex items-center justify-center space-x-1"
           onClick={handleLogout}
         >
-          Log Out of YouTube
+          <div className="mr-1">
+            <FaYoutube aria-label="YouTube" role="img" />
+          </div>
+          Disconnect
         </button>
       ) : (
         <button
-          className="bg-customHeadline hover:bg-customButton text-xs text-customStroke hover:text-slate-800 font-bold py-1 px-2 my-6 rounded-md border border-black"
+          className="bg-customHeadline hover:bg-customButton text-md text-customStroke hover:text-red-700 font-bold py-1 px-2 rounded-md border border-black flex items-center justify-center space-x-1"
           onClick={handleLogin}
         >
-          Connect YouTube Account
+          <div className="mr-1">
+            <FaYoutube aria-label="YouTube" role="img" />
+          </div>
+          Connect
         </button>
       )}
     </div>

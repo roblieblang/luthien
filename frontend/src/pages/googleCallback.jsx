@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { Bars } from "react-loader-spinner";
 import { useUser } from "../contexts/userContext";
 
 export default function GoogleCallback() {
@@ -7,7 +8,6 @@ export default function GoogleCallback() {
 
   useEffect(() => {
     if (window.location.pathname === "/google/callback") {
-      console.log(`\nApp UID: ${userID}`);
       const urlParams = new URLSearchParams(window.location.search);
       const code = urlParams.get("code");
       const sessionID = sessionStorage.getItem("sessionID");
@@ -31,5 +31,15 @@ export default function GoogleCallback() {
     }
   });
 
-  return <h1>Loading...</h1>;
+  return (
+    <div className="flex h-screen items-center justify-center">
+      <Bars
+        height="80"
+        width="80"
+        color="#e2714a"
+        ariaLabel="bars-loading"
+        visible={true}
+      />
+    </div>
+  );
 }

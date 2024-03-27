@@ -12,14 +12,6 @@ export default function App() {
     <>
       <Routes>
         <Route path="/" element={<Home />} />
-        <Route
-          path="/profile"
-          element={
-            <ProtectedRoute>
-              <Profile />
-            </ProtectedRoute>
-          }
-        />
         <Route path="/spotify/callback" element={<SpotifyCallback />} />
         <Route path="/google/callback" element={<GoogleCallback />} />
         <Route

@@ -1,4 +1,5 @@
 import { useAuth0 } from "@auth0/auth0-react";
+import { FaSpotify } from "react-icons/fa";
 import { useUser } from "../../contexts/userContext";
 
 export default function SpotifyAuthButton() {
@@ -42,17 +43,23 @@ export default function SpotifyAuthButton() {
     <div>
       {spotifyAuthStatus ? (
         <button
-          className="bg-customHeadline hover:bg-customButton text-xs text-customStroke hover:text-slate-800 font-bold py-1 px-2 my-6 rounded-md border border-black"
+          className="bg-customHeadline hover:bg-customButton text-md text-customStroke hover:text-green-600 font-bold py-1 px-2 rounded-md border border-black flex items-center justify-center space-x-1"
           onClick={handleLogout}
         >
-          Log Out of Spotify
+          <div className="mr-1">
+            <FaSpotify aria-label="YouTube" role="img" />
+          </div>
+          Disconnect
         </button>
       ) : (
         <button
-          className="bg-customHeadline hover:bg-customButton text-xs text-customStroke hover:text-slate-800 font-bold py-1 px-2 my-6 rounded-md border border-black"
+          className="bg-customHeadline hover:bg-customButton text-md text-customStroke hover:text-green-600 font-bold py-1 px-2 rounded-md border border-black flex items-center justify-center space-x-1"
           onClick={handleLogin}
         >
-          Connect Spotify Account
+          <div className="mr-1">
+            <FaSpotify aria-label="YouTube" role="img" />
+          </div>
+          Connect
         </button>
       )}
     </div>

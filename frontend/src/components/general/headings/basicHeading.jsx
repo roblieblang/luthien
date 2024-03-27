@@ -1,6 +1,10 @@
-export default function BasicHeading({ text }) {
+export default function BasicHeading({ text, textSize }) {
   return (
-    <div className="text-center text-customStroke text-4xl w-screen mb-10">
+    <div
+      className={`text-center text-customStroke ${
+        textSize === undefined ? "text-4xl" : textSize
+      } w-screen mb-10`}
+    >
       <h1>{text}</h1>
     </div>
   );

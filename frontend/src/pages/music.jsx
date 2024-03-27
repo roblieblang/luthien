@@ -99,7 +99,9 @@ export default function Music() {
 
   return (
     <div className="mb-2">
-      <BasicHeading text="Music Page" />
+      <div className="mt-2">
+        <BasicHeading text="Get Started" />
+      </div>
       <div className="-mt-6">
         <h1>Select Playlist Source</h1>
         <div className="flex justify-center p-2">
@@ -126,7 +128,7 @@ export default function Music() {
       {playlistSource === "spotify" && <SpotifyUserProfile />}
       {playlistSource === "youtube" && <YouTubeUserProfile />}
       {playlistSource === "spotify" && (
-        <div className="flex justify-between mx-10">
+        <div className="flex justify-between mx-10 mt-2">
           {playlistsListCurrentPage > 1 && (
             <LinkButton text="Previous" onClick={handlePrevious} />
           )}

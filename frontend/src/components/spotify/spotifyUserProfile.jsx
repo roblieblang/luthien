@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
+import { Bars } from "react-loader-spinner";
 import { useUser } from "../../contexts/userContext";
-import UserPlaylists from "../userPlaylists";
+import UserPlaylists from "../general/userPlaylists";
 
 export default function SpotifyUserProfile() {
   const { userID, updateSpotifyUserID } = useUser();
@@ -22,8 +23,7 @@ export default function SpotifyUserProfile() {
         .then((data) => {
           setProfile(data);
           updateSpotifyUserID(data.id);
-          sessionStorage.setItem("spotifyUserId", data.id)
-          console.log("spotify user profile id:", data.id)
+          sessionStorage.setItem("spotifyUserId", data.id);
         })
         .catch((error) => {
           console.error("Error fetching user profile:", error);
@@ -32,7 +32,17 @@ export default function SpotifyUserProfile() {
   }, [userID]);
 
   if (!profile) {
-    return <div>Loading...</div>;
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <Bars
+          height="80"
+          width="80"
+          color="#e2714a"
+          ariaLabel="bars-loading"
+          visible={true}
+        />
+      </div>
+    );
   }
 
   return (
@@ -40,7 +50,10 @@ export default function SpotifyUserProfile() {
       <h1 className="font-bold text-lg">
         {profile.display_name}&apos;s Spotify Account
       </h1>
-      <UserPlaylists serviceType={"spotify"} />
+
+      <div className="mt-2">
+        <UserPlaylists serviceType={"spotify"} />
+      </div>
     </div>
   );
 }

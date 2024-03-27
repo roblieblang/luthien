@@ -1,8 +1,8 @@
 import { Link } from "react-router-dom";
 
-export default function LinkButton({ to, text, onClick, state }) {
+export default function LinkButton({ to, text, onClick, state, className }) {
   const CLASSNAME =
-    "bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded";
+    "hover:bg-white hover:text-green-500 transition text-sm font-bold rounded bg-customSecondary py-1 px-2";
 
   // Check if 'to' prop starts with "http" to determine if it's an external link
   const isExternal = typeof to === "string" && to.startsWith("http");
@@ -32,7 +32,7 @@ export default function LinkButton({ to, text, onClick, state }) {
   } else {
     // Render as a button if no 'to' prop is provided
     return (
-      <button className={CLASSNAME} onClick={onClick}>
+      <button className={className} onClick={onClick}>
         {text}
       </button>
     );

@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { Bars } from "react-loader-spinner";
 import { useUser } from "../contexts/userContext";
 
 export default function SpotifyCallback() {
@@ -30,5 +31,15 @@ export default function SpotifyCallback() {
     }
   }, [userID]);
 
-  return <h1>Loading...</h1>;
+  return (
+    <div className="flex h-screen items-center justify-center">
+      <Bars
+        height="80"
+        width="80"
+        color="#e2714a"
+        ariaLabel="bars-loading"
+        visible={true}
+      />
+    </div>
+  );
 }

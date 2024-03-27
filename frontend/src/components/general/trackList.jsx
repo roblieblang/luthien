@@ -6,15 +6,17 @@ import { useUser } from "../../contexts/userContext";
 
 const Track = ({ track, source }) => {
   return (
-    <div className="bg-customBG rounded border-customParagraph border-solid border-2 p-2 my-0.5 flex flex-col w-11/12">
-      <div className="flex items-center justify-center w-full mb-2">
+    <div className="bg-customBG rounded border-customParagraph border-solid border-2 p-2 my-0.5 flex w-11/12">
+      <div className="flex-none">
         {track.thumbnailUrl && (
           <img
             src={track.thumbnailUrl}
             alt={track.title}
-            className="lg:h-28 lg:w-28 h-12 w-12 object-cover lg:mr-0 mr-2 border-2 rounded"
+            className="lg:h-28 lg:w-28 h-14 w-14 object-cover mr-2 border-2 rounded"
           />
         )}
+      </div>
+      <div className="flex-1 text-center flex flex-col justify-center">
         <a
           href={track.link}
           target="_blank"
@@ -22,22 +24,22 @@ const Track = ({ track, source }) => {
           className="inline-block"
         >
           <h3 className="lg:text-2xl text-sm font-bold text-slate-200 hover:text-blue-500">
-            {track.title}
+            {he.decode(track.title)}
           </h3>
         </a>
-      </div>
-      <div className="flex items-center justify-center w-full lg:text-lg text-xs">
-        <span>{source.charAt(0).toUpperCase() + source.slice(1)}</span>
-        <span className="mx-2">•</span>
-        {source === "spotify" ? (
-          <>
-            <span>{track.artist}</span>
-            <span className="mx-2">•</span>
-            <span>{track.album}</span>{" "}
-          </>
-        ) : (
-          <span>{track.channelTitle}</span>
-        )}
+        <div className="lg:text-lg text-xs">
+          <span>{source.charAt(0).toUpperCase() + source.slice(1)}</span>
+          <span className="mx-2">•</span>
+          {source === "spotify" ? (
+            <>
+              <span>{track.artist}</span>
+              <span className="mx-2">•</span>
+              <span>{track.album}</span>{" "}
+            </>
+          ) : (
+            <span>{track.channelTitle}</span>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -49,7 +51,6 @@ const TrackList = ({ playlistID, sourceType }) => {
 
   useEffect(() => {
     if (playlistID && userID) {
-      console.log("tracklist pID and uID:", playlistID, userID);
       setIsFetchingTracks(true);
       let url;
       if (sourceType === "spotify") {
@@ -77,7 +78,6 @@ const TrackList = ({ playlistID, sourceType }) => {
             return res.json();
           })
           .then((data) => {
-            console.log("tracklist data:", data);
             const formattedTracks = data.items.map((item) => {
               if (sourceType === "spotify") {
                 return {
@@ -104,7 +104,6 @@ const TrackList = ({ playlistID, sourceType }) => {
               }
             });
             setTracks(formattedTracks);
-            console.log("tracklist formattedtracks:", formattedTracks);
           })
           .catch((error) => {
             console.error("Error fetching playlist tracks:", error);
@@ -129,7 +128,7 @@ const TrackList = ({ playlistID, sourceType }) => {
   }
 
   return (
-    <div className="flex flex-col items-center">
+    <div className="flex flex-col items-center px-0">
       {tracks.map((track, index) => (
         <Track key={track.id} track={track} source={sourceType} />
       ))}
