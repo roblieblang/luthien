@@ -99,7 +99,7 @@ func (c *YouTubeClient) GetCurrentUserPlaylists(accessToken string) (YouTubePlay
     var nextPageToken string
     var totalCount int
     for {
-        call := service.Playlists.List([]string{"snippet", "contentDetails"}).Mine(true).MaxResults(50).PageToken(nextPageToken)
+        call := service.Playlists.List([]string{"snippet", "contentDetails", "status"}).Mine(true).MaxResults(50).PageToken(nextPageToken)
         resp, err := call.Do()
         if err != nil {
             googleAPIError, ok := err.(*googleapi.Error)
@@ -143,9 +143,6 @@ func (c *YouTubeClient) GetCurrentUserPlaylists(accessToken string) (YouTubePlay
         Playlists:  playlists,
     }, nil
 }
-
-
-
 
 // Gets a playlist's items
 func (c *YouTubeClient) GetPlaylistItems(playlistID, accessToken string) (YouTubePlaylistItemsResponse, error) {
