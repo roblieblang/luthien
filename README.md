@@ -26,11 +26,14 @@ I built a playlist conversion application for cross-platform listening between S
 - Go
 - Gin
 - Redis
-- Google Cloud Platform
+- Docker
+- Auth0
+- Google Cloud Platform (Cloud Run)
 - Upstash
 ### Frontend
 - JavaScript
 - React
+- Vite
 - Tailwind
 - Auth0
 - Vercel
