@@ -1,11 +1,12 @@
-import he from "he";
 import { useEffect, useState } from "react";
-import { Bars } from "react-loader-spinner";
 import { useNavigate } from "react-router-dom";
 import { usePlaylist } from "../../../contexts/playlistContext";
 import { useUser } from "../../../contexts/userContext";
+import { config } from "../../../utils/config";
 import { showErrorToast } from "../../../utils/toastUtils";
 import LinkButton from "../buttons/linkButton";
+import { ModalTrack } from "../track";
+import Loading from "./loading";
 
 export default function ConversionModal({
   isOpen,
@@ -19,14 +20,16 @@ export default function ConversionModal({
 }) {
   const { userID, spotifyUserID, updateSpotifyUserID } = useUser();
   const { setPlaylistsLastUpdated } = usePlaylist();
-  const [adjustedSearchHits, setAdjustedSearchHits] = useState([]);
-  const [adjustedSearchMisses, setAdjustedSearchMisses] = useState([]);
   const navigate = useNavigate();
 
-  const stockDescription = `Playlist converted from ${source} to ${destination} with Luthien: http://localhost:5173`;
+  const [isLoading, setIsLoading] = useState(false);
+  const [adjustedSearchHits, setAdjustedSearchHits] = useState([]);
+  const [adjustedSearchMisses, setAdjustedSearchMisses] = useState([]);
+
+  const stockDescription = `Playlist converted from ${source} to ${destination} with Luthien: ${config.backendUrl}`;
 
   const fetchSpotifyUserId = async () => {
-    fetch(`http://localhost:8080/spotify/current-profile?userID=${userID}`)
+    fetch(`${config.backendUrl}/spotify/current-profile?userID=${userID}`)
       .then((res) => {
         if (!res.ok) {
           if (res.status === 401) {
@@ -55,7 +58,7 @@ export default function ConversionModal({
         spotifyUserId = await fetchSpotifyUserId();
       }
     }
-    const url = `http://localhost:8080/spotify/create-playlist`;
+    const url = `${config.backendUrl}/spotify/create-playlist`;
     const payload = {
       userId: userID,
       spotifyUserId: spotifyUserID || spotifyUserId,
@@ -85,7 +88,7 @@ export default function ConversionModal({
   };
 
   const addToNewSpotifyPlaylist = async (newPlaylistId) => {
-    const url = `http://localhost:8080/spotify/add-items-to-playlist`;
+    const url = `${config.backendUrl}/spotify/add-items-to-playlist`;
     const trackUris = adjustedSearchHits.map((track) => track.id);
     const payload = {
       userId: userID,
@@ -117,7 +120,7 @@ export default function ConversionModal({
   };
 
   const createNewYouTubePlaylist = async () => {
-    const url = `http://localhost:8080/youtube/create-playlist`;
+    const url = `${config.backendUrl}/youtube/create-playlist`;
     const payload = {
       userId: userID,
       payload: {
@@ -148,7 +151,7 @@ export default function ConversionModal({
   };
 
   const addToNewYouTubePlaylist = async (newPlaylistId) => {
-    const url = `http://localhost:8080/youtube/add-items-to-playlist`;
+    const url = `${config.backendUrl}/youtube/add-items-to-playlist`;
     const videoIds = adjustedSearchHits.map((track) => track.id);
     const payload = {
       userId: userID,
@@ -182,7 +185,7 @@ export default function ConversionModal({
   };
 
   const rollbackPlaylistCreation = async (newPlaylistId, service) => {
-    const url = `http://localhost:8080/${service}/delete-playlist?userID=${userID}&playlistID=${newPlaylistId}`;
+    const url = `${config.backendUrl}/${service}/delete-playlist?userID=${userID}&playlistID=${newPlaylistId}`;
     const response = await fetch(url, {
       method: "DELETE",
       headers: {
@@ -202,6 +205,7 @@ export default function ConversionModal({
   };
 
   const finalizeConversion = async () => {
+    setIsLoading(true);
     try {
       let newPlaylistId = await (destination === "Spotify"
         ? createNewSpotifyPlaylist()
@@ -212,25 +216,29 @@ export default function ConversionModal({
         showErrorToast(
           "Error during conversion process. Please try again later."
         );
+        setIsLoading(false);
         return;
       }
 
       let tracksAddedSuccessfully = await (destination === "Spotify"
         ? addToNewSpotifyPlaylist(newPlaylistId)
         : addToNewYouTubePlaylist(newPlaylistId));
+
       if (!tracksAddedSuccessfully) {
         console.error("Failed to add tracks to the playlist.");
         showErrorToast(
           "Error during conversion process. Please try again later."
         );
+        setIsLoading(false);
         return;
       }
+
       // Conversion success
       setPlaylistsLastUpdated(Date.now());
       // Wait for all backend operations to complete before redirecting and refetching playlists
       sessionStorage.setItem(
         "conversionStatus",
-        `complete:'${playlistTitle}', ${source} ==> ${destination}`
+        `complete:Converted '${playlistTitle}' from ${source} to ${destination}`
       );
       setTimeout(() => {
         navigate("/music");
@@ -238,7 +246,16 @@ export default function ConversionModal({
     } catch (error) {
       showErrorToast("Error during conversion process. Please try again.");
       console.error("Error during the finalize conversion process:", error);
+      setIsLoading(false);
     }
+  };
+
+  const cancelConversion = () => {
+    setAdjustedSearchHits([]);
+    setAdjustedSearchMisses([]);
+    setTimeout(() => {
+      navigate("/music");
+    }, 400);
   };
 
   useEffect(() => {
@@ -260,18 +277,8 @@ export default function ConversionModal({
 
   if (!isOpen) return null;
 
-  if (!adjustedSearchHits || adjustedSearchHits.length === 0) {
-    return (
-      <div className="flex mt-3 items-center justify-center">
-        <Bars
-          height="70"
-          width="70"
-          color="#e2714a"
-          ariaLabel="bars-loading"
-          visible={true}
-        />
-      </div>
-    );
+  if (!adjustedSearchHits || adjustedSearchHits.length === 0 || isLoading) {
+    return <Loading />;
   }
 
   return (
@@ -280,52 +287,65 @@ export default function ConversionModal({
       onClick={onClose}
     >
       <div
-        className="bg-gray-700 p-6 rounded-lg w-3/4 h-auto sm:h-1/2 lg:max-h-[90vh] overflow-y-auto relative"
+        className="bg-gray-700 p-4 pt-6 rounded-lg lg:w-2/3 w-4/5 max-h-[90vh] overflow-y-auto custom-scrolling-touch"
+        style={{ WebkitOverflowScrolling: "touch", overflowY: "auto" }}
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="text-blue-400">
-          Tracks Found: {adjustedSearchHits.length}
+        <h2 className="text-lg -mt-4 mb-2 text-blue-500 font-bold border-b-2 border-customParagraph">
+          {destination} Tracks Found: {adjustedSearchHits.length}
         </h2>
-        <ul
-          className={`max-h-96 overflow-y-auto ${
-            adjustedSearchMisses.length > 0 ? "bg-red-900" : ""
-          }`}
-        >
+        <div className="flex flex-col items-center">
           {adjustedSearchHits.map((track, index) => (
-            <li key={`${destination}-${track.id}-${index}`}>
-              <img
-                id="track-image"
-                src={track.thumbnail}
-                alt={he.decode(track.title)}
-                className="h-14 w-14 object-cover"
-              />
-              <div id="track-title">{he.decode(track.title)}</div>
-              {track.artist && (
-                <div id="track-artist">by {he.decode(track.artist)}</div>
-              )}
-              {track.album && (
-                <div id="track-album">from {he.decode(track.album)}</div>
-              )}
-            </li>
+            <ModalTrack
+              key={`${destination}-${track.id}-${index}`}
+              track={track}
+              destination={destination.toLowerCase()}
+              formattedLink={
+                destination.toLowerCase() === "youtube"
+                  ? `https://www.youtube.com/watch?v=${track.id}`
+                  : `https://open.spotify.com/${track.id
+                      .split(":")
+                      .slice(1)
+                      .join("/")}`
+              }
+              isHit={true}
+            />
           ))}
-          {adjustedSearchMisses.length > 0 && (
-            <div>
-              <h2 className="text-blue-400">
-                Tracks Not Found on Spotify: {adjustedSearchMisses.length}
-              </h2>
-              <ul>
-                {adjustedSearchMisses.map((miss, index) => (
-                  <li key={`miss-${index}`}>{he.decode(miss.songTitle)}</li>
-                ))}
-              </ul>
+        </div>
+        {adjustedSearchMisses.length > 0 && (
+          <>
+            <h2 className="text-lg mt-1 mb-2 text-red-500 font-bold border-b-2 border-customParagraph">
+              Spotify Tracks Not Found: {adjustedSearchMisses.length}
+            </h2>
+            <div className="flex flex-col items-center">
+              {adjustedSearchMisses.map((miss, index) => (
+                <ModalTrack
+                  track={miss}
+                  key={`${miss.songTitle}-${index}`}
+                  isHit={false}
+                />
+              ))}
             </div>
-          )}
-        </ul>
+          </>
+        )}
 
         {children}
 
-        <div className="flex flex-col items-center mt-4">
-          <LinkButton text="Confirm Conversion" onClick={finalizeConversion} />
+        <div className="flex flex-col items-center mt-4 space-y-2">
+          <LinkButton
+            text="Confirm Conversion"
+            onClick={finalizeConversion}
+            className={
+              "hover:bg-white hover:text-green-500 transition text-sm hover:font-extrabold font-bold rounded bg-customSecondary py-1 px-2"
+            }
+          />
+          <LinkButton
+            text="Cancel"
+            onClick={cancelConversion}
+            className={
+              "hover:bg-white hover:text-black hover:font-bold transition text-sm font-medium rounded bg-customSecondary py-1 px-2"
+            }
+          />
         </div>
       </div>
     </div>

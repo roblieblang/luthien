@@ -32,6 +32,7 @@ export default function Home() {
       );
       setTimeout(() => {
         navigate(window.location.pathname, { replace: true });
+        window.location.reload();
       }, 3000);
     }
 
@@ -52,7 +53,6 @@ export default function Home() {
     <div className="flex items-center justify-center text-center">
       <div className="mt-5">
         <BasicHeading text="Convert Your Playlists" />
-        <p className="text-xs -mt-10">(Demo App)</p>
       </div>
       <div className="absolute inset-0 flex flex-col items-center justify-center -mt-40">
         {isAuthenticated && (

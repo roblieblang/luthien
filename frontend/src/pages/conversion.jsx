@@ -6,10 +6,9 @@ import ConversionModal from "../components/general/modals/conversionModal";
 import TrackList from "../components/general/trackList";
 import { usePlaylist } from "../contexts/playlistContext";
 import { useUser } from "../contexts/userContext";
+import { config } from "../utils/config";
 
 export default function Conversion() {
-  const [conversionProgress, setConversionProgress] = useState(0);
-  const [conversionStatus, setConversionStatus] = useState("searching");
   const [spotifySearchMisses, setSpotifySearchMisses] = useState([]); // There are no search misses for youtube
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -23,14 +22,14 @@ export default function Conversion() {
   const constructSpotifySearchUrlsUsingVideoTitles = (videoTitles) => {
     return videoTitles.map(
       (title) =>
-        `http://localhost:8080/spotify/search-using-video?userID=${userID}&videoTitle=${title}`
+        `${config.backendUrl}/spotify/search-using-video?userID=${userID}&videoTitle=${title}`
     );
   };
 
   const constructYouTubeSearchUrls = () => {
     return tracks.map(
       (track) =>
-        `http://localhost:8080/youtube/search-for-video?userID=${userID}&songTitle=${track.title}&artistName=${track.artist}`
+        `${config.backendUrl}/youtube/search-for-video?userID=${userID}&songTitle=${track.title}&artistName=${track.artist}`
     );
   };
 
@@ -89,7 +88,7 @@ export default function Conversion() {
         track.artist,
         track.title,
       ]);
-      initiateSearch(searchUrls, artistSongPairs); // Adjusted to pass artistSongPairs
+      initiateSearch(searchUrls, artistSongPairs);
     } else {
       const videoTitles = tracks.map((track) => track.title);
       const cleanedVideoTitles = videoTitles.map((title) =>
@@ -116,6 +115,15 @@ export default function Conversion() {
       clearTracks();
     };
   }, [location.pathname]);
+
+  useEffect(() => {
+    if (isModalOpen) {
+      document.body.style.overflowY = "hidden";
+    }
+    return () => {
+      document.body.style.overflowY = "auto";
+    };
+  }, [isModalOpen]);
 
   useEffect(() => {
     let missingValues = [];
@@ -163,7 +171,11 @@ export default function Conversion() {
       </div>
       <ConversionModal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        onClose={() => {
+          setIsModalOpen(false);
+          setSearchHits([]);
+          setSpotifySearchMisses([]);
+        }}
         searchHits={searchHits}
         spotifySearchMisses={spotifySearchMisses}
         source={source}

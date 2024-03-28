@@ -1,6 +1,7 @@
 import { useAuth0 } from "@auth0/auth0-react";
 import { FaYoutube } from "react-icons/fa";
 import { useUser } from "../../contexts/userContext";
+import { config } from "../../utils/config";
 
 export default function YouTubeAuthButton() {
   const { isAuthenticated } = useAuth0();
@@ -8,7 +9,7 @@ export default function YouTubeAuthButton() {
 
   const handleLogin = () => {
     if (isAuthenticated) {
-      fetch("http://localhost:8080/auth/google/login")
+      fetch(`${config.backendUrl}/auth/google/login`)
         .then((response) => {
           if (!response.ok) throw new Error("Network response was not ok");
           return response.json();
@@ -24,7 +25,7 @@ export default function YouTubeAuthButton() {
   };
 
   const handleLogout = () => {
-    fetch("http://localhost:8080/auth/google/logout", {
+    fetch(`${config.backendUrl}/auth/google/logout`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

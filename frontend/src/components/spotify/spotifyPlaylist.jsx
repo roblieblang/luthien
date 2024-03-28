@@ -7,14 +7,13 @@ import TrackList from "../general/trackList";
 
 export default function SpotifyPlaylist({ playlist }) {
   return (
-    <div className="bg-customBG rounded border-customParagraph border-solid border-2 p-2 my-0.5 flex flex-col w-11/12">
-      {/* Top Row: Image, Name, Select Button */}
+    <div className="bg-customBG rounded border-customParagraph border-solid border-2 p-2 my-0.5 flex flex-col lg:w-1/2 w-11/12">
       <div className="flex items-center justify-between mb-2">
         {playlist.images && playlist.images[0] && (
           <img
             src={playlist.images[0].url}
             alt={playlist.name}
-            className="h-16 w-16 object-cover border-2 rounded"
+            className="lg:h-28 lg:w-28 h-16 w-16 object-cover border-2 rounded"
           />
         )}
         <a
@@ -23,7 +22,7 @@ export default function SpotifyPlaylist({ playlist }) {
           rel="noopener noreferrer"
           className="inline-block ml-1"
         >
-          <h3 className="text-sm font-bold text-slate-200 hover:text-blue-500">
+          <h3 className="lg:text-xl text-sm font-bold text-slate-200 hover:text-blue-500">
             {he.decode(playlist.name)}
           </h3>
         </a>
@@ -47,7 +46,7 @@ export default function SpotifyPlaylist({ playlist }) {
       </div>
 
       {/* Bottom Row: Track Total and Owner */}
-      <div className="text-xs ">
+      <div className="xl:-mt-2 lg:text-lg text-xs">
         <span>
           {playlist.tracks.total}{" "}
           {playlist.tracks.total === 1 ? "track" : "tracks"}

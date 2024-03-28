@@ -107,16 +107,18 @@ export default function Music() {
         <div className="flex justify-center p-2">
           <div className="flex items-center space-x-6 text-3xl cursor-pointer">
             <FaSpotify
-              className={`hover:text-green-400 ${
-                playlistSource === "spotify" && "text-green-600 scale-125"
+              className={`lg:scale-125 hover:text-green-400 ${
+                playlistSource === "spotify" &&
+                "text-green-600 scale-125 lg:scale-150"
               }`}
               aria-label="Spotify"
               role="img"
               onClick={() => setPlaylistSource("spotify")}
             />
             <FaYoutube
-              className={`hover:text-red-500 ${
-                playlistSource === "youtube" && "text-red-600 scale-125"
+              className={`lg:scale-125 hover:text-red-500 ${
+                playlistSource === "youtube" &&
+                "text-red-600 scale-125 lg:scale-150"
               }`}
               aria-label="YouTube"
               role="img"
@@ -128,7 +130,7 @@ export default function Music() {
       {playlistSource === "spotify" && <SpotifyUserProfile />}
       {playlistSource === "youtube" && <YouTubeUserProfile />}
       {playlistSource === "spotify" && (
-        <div className="flex justify-between mx-10 mt-2">
+        <div className="flex lg:justify-center lg:space-x-10 justify-between mx-10 mt-2">
           {playlistsListCurrentPage > 1 && (
             <LinkButton text="Previous" onClick={handlePrevious} />
           )}

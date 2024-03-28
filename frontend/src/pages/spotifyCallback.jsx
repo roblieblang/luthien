@@ -1,6 +1,7 @@
 import { useEffect } from "react";
-import { Bars } from "react-loader-spinner";
+import Loading from "../components/general/modals/loading";
 import { useUser } from "../contexts/userContext";
+import { config } from "../utils/config";
 
 export default function SpotifyCallback() {
   const { userID } = useUser();
@@ -12,7 +13,7 @@ export default function SpotifyCallback() {
       // const userID = sessionStorage.getItem("userID"); // I think the retrieval from session storage was faster than context
       const sessionID = sessionStorage.getItem("sessionID");
 
-      fetch("http://localhost:8080/auth/spotify/callback", {
+      fetch(`${config.backendUrl}/auth/spotify/callback`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -31,15 +32,5 @@ export default function SpotifyCallback() {
     }
   }, [userID]);
 
-  return (
-    <div className="flex h-screen items-center justify-center">
-      <Bars
-        height="80"
-        width="80"
-        color="#e2714a"
-        ariaLabel="bars-loading"
-        visible={true}
-      />
-    </div>
-  );
+  return <Loading />;
 }

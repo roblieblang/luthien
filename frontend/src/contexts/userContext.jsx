@@ -6,6 +6,7 @@ import {
   useEffect,
   useState,
 } from "react";
+import { config } from "../utils/config";
 
 const UserContext = createContext();
 
@@ -53,7 +54,7 @@ export const UserProvider = ({ children }) => {
   // Spotify
   useEffect(() => {
     checkAuthStatus(
-      `http://localhost:8080/auth/spotify/check-auth?userID=${userID}`,
+      `${config.backendUrl}/auth/spotify/check-auth?userID=${userID}`,
       setSpotifyAuthStatus
     );
   }, [userID, checkAuthStatus]);
@@ -61,7 +62,7 @@ export const UserProvider = ({ children }) => {
   // Google/YouTube
   useEffect(() => {
     checkAuthStatus(
-      `http://localhost:8080/auth/google/check-auth?userID=${userID}`,
+      `${config.backendUrl}/auth/google/check-auth?userID=${userID}`,
       setYouTubeAuthStatus
     );
   }, [userID, checkAuthStatus]);

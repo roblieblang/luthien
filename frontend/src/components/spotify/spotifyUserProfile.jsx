@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { Bars } from "react-loader-spinner";
 import { useUser } from "../../contexts/userContext";
+import { config } from "../../utils/config";
+import Loading from "../general/modals/loading";
 import UserPlaylists from "../general/userPlaylists";
 
 export default function SpotifyUserProfile() {
@@ -9,7 +10,7 @@ export default function SpotifyUserProfile() {
 
   useEffect(() => {
     if (userID) {
-      fetch(`http://localhost:8080/spotify/current-profile?userID=${userID}`)
+      fetch(`${config.backendUrl}/spotify/current-profile?userID=${userID}`)
         .then((res) => {
           if (!res.ok) {
             if (res.status === 401) {
@@ -32,17 +33,7 @@ export default function SpotifyUserProfile() {
   }, [userID]);
 
   if (!profile) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <Bars
-          height="80"
-          width="80"
-          color="#e2714a"
-          ariaLabel="bars-loading"
-          visible={true}
-        />
-      </div>
-    );
+    return <Loading />;
   }
 
   return (

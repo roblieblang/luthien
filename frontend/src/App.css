@@ -54,3 +54,7 @@ a, h3 {
   visibility: visible;
   opacity: 1;
 }
+
+.custom-scrolling-touch {
+  -webkit-overflow-scrolling: touch;
+}

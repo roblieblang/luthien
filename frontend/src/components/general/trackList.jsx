@@ -1,49 +1,9 @@
-import he from "he";
-import { useEffect, useState } from "react";
-import { Bars } from "react-loader-spinner";
+import { useEffect } from "react";
 import { usePlaylist } from "../../contexts/playlistContext";
 import { useUser } from "../../contexts/userContext";
-
-const Track = ({ track, source }) => {
-  return (
-    <div className="bg-customBG rounded border-customParagraph border-solid border-2 p-2 my-0.5 flex w-11/12">
-      <div className="flex-none">
-        {track.thumbnailUrl && (
-          <img
-            src={track.thumbnailUrl}
-            alt={track.title}
-            className="lg:h-28 lg:w-28 h-14 w-14 object-cover mr-2 border-2 rounded"
-          />
-        )}
-      </div>
-      <div className="flex-1 text-center flex flex-col justify-center">
-        <a
-          href={track.link}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-block"
-        >
-          <h3 className="lg:text-2xl text-sm font-bold text-slate-200 hover:text-blue-500">
-            {he.decode(track.title)}
-          </h3>
-        </a>
-        <div className="lg:text-lg text-xs">
-          <span>{source.charAt(0).toUpperCase() + source.slice(1)}</span>
-          <span className="mx-2">•</span>
-          {source === "spotify" ? (
-            <>
-              <span>{track.artist}</span>
-              <span className="mx-2">•</span>
-              <span>{track.album}</span>{" "}
-            </>
-          ) : (
-            <span>{track.channelTitle}</span>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-};
+import { config } from "../../utils/config";
+import Loading from "./modals/loading";
+import { Track } from "./track";
 
 const TrackList = ({ playlistID, sourceType }) => {
   const { tracks, setTracks, setIsFetchingTracks } = usePlaylist();
@@ -54,9 +14,9 @@ const TrackList = ({ playlistID, sourceType }) => {
       setIsFetchingTracks(true);
       let url;
       if (sourceType === "spotify") {
-        url = `http://localhost:8080/spotify/playlist-tracks?userID=${userID}&playlistID=${playlistID}`;
+        url = `${config.backendUrl}/spotify/playlist-tracks?userID=${userID}&playlistID=${playlistID}`;
       } else if (sourceType === "youtube") {
-        url = `http://localhost:8080/youtube/playlist-tracks?userID=${userID}&playlistID=${playlistID}`;
+        url = `${config.backendUrl}/youtube/playlist-tracks?userID=${userID}&playlistID=${playlistID}`;
       }
 
       if (url) {
@@ -114,17 +74,7 @@ const TrackList = ({ playlistID, sourceType }) => {
   }, [playlistID, setTracks, userID, sourceType, setIsFetchingTracks]);
 
   if (!tracks.length) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <Bars
-          height="80"
-          width="80"
-          color="#e2714a"
-          ariaLabel="bars-loading"
-          visible={true}
-        />
-      </div>
-    );
+    return <Loading />;
   }
 
   return (

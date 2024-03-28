@@ -1,19 +1,20 @@
 import { useEffect, useState } from "react";
-import { Bars } from "react-loader-spinner";
 import { usePlaylist } from "../../contexts/playlistContext";
 import { useUser } from "../../contexts/userContext";
+import { config } from "../../utils/config";
 import SpotifyPlaylist from "../spotify/spotifyPlaylist";
 import YouTubePlaylist from "../youtube/youTubePlaylist";
+import Loading from "./modals/loading";
 
 const services = {
   spotify: {
     api: ({ userID, offset = 0 }) =>
-      `http://localhost:8080/spotify/current-user-playlists?userID=${userID}&offset=${offset}`,
+      `${config.backendUrl}/spotify/current-user-playlists?userID=${userID}&offset=${offset}`,
     component: SpotifyPlaylist,
   },
   youtube: {
     api: ({ userID }) =>
-      `http://localhost:8080/youtube/current-user-playlists?userID=${userID}`,
+      `${config.backendUrl}/youtube/current-user-playlists?userID=${userID}`,
     component: YouTubePlaylist,
   },
 };
@@ -87,17 +88,7 @@ export default function UserPlaylists({ serviceType }) {
   ]);
 
   if (playlists == undefined || playlists.length === 0) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <Bars
-          height="80"
-          width="80"
-          color="#e2714a"
-          ariaLabel="bars-loading"
-          visible={true}
-        />
-      </div>
-    );
+    return <Loading />;
   }
 
   const PlaylistComponent = services[serviceType]?.component;

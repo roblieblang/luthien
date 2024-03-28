@@ -1,6 +1,7 @@
 import { useAuth0 } from "@auth0/auth0-react";
 import { FaSpotify } from "react-icons/fa";
 import { useUser } from "../../contexts/userContext";
+import { config } from "../../utils/config";
 
 export default function SpotifyAuthButton() {
   const { isAuthenticated } = useAuth0();
@@ -8,7 +9,7 @@ export default function SpotifyAuthButton() {
 
   const handleLogin = () => {
     if (isAuthenticated) {
-      fetch("http://localhost:8080/auth/spotify/login")
+      fetch(`${config.backendUrl}/auth/spotify/login`)
         .then((response) => {
           if (!response.ok) throw new Error("Network response was not ok");
           return response.json();
@@ -24,7 +25,7 @@ export default function SpotifyAuthButton() {
   };
 
   const handleLogout = () => {
-    fetch("http://localhost:8080/auth/spotify/logout", {
+    fetch(`${config.backendUrl}/auth/spotify/logout`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
