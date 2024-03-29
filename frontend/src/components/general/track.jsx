@@ -44,7 +44,6 @@ export function Track({ track, source, formattedLink }) {
 export function ModalTrack({ track, destination, formattedLink, isHit }) {
   const title = track.title || track.songTitle;
   const artist = track.artistName || track.artist;
-  console.log(track)
 
   if (isHit) {
     return (
