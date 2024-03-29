@@ -100,6 +100,7 @@ func (h *YouTubeHandler) CheckAuthHandler(c *gin.Context) {
 
     userMetadata, err := h.youTubeService.Auth0Service.GetUserMetadata(userID) 
     if err != nil {
+        log.Printf("Error getting Auth0 user metadata: %v", err)
         c.JSON(http.StatusInternalServerError, gin.H{"error": err})
 		return
     }

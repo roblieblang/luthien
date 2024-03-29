@@ -3,6 +3,7 @@ package auth0
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -56,7 +57,6 @@ func NewAuth0Client(appCtx *utils.AppContext) *Auth0Client {
 
 // Requests a new Auth0 Management API access token
 func (c *Auth0Client) RequestToken() (utils.TokenResponse, error) {
-	log.Printf("Requesting a new Auth0 token...")
     clientSecret := c.AppContext.EnvConfig.Auth0ManagementClientSecret
 	clientID := c.AppContext.EnvConfig.Auth0ManagementClientID
 	domain := c.AppContext.EnvConfig.Auth0Domain
@@ -105,7 +105,6 @@ func (c *Auth0Client) RequestToken() (utils.TokenResponse, error) {
 }
 
 func (c *Auth0Client) GetUserMetadata(accessToken string, userID string) (Auth0UserMetadata, error) {
-	log.Printf("Getting Auth0 user metadata...")
     domain := c.AppContext.EnvConfig.Auth0Domain
 	url := fmt.Sprintf("https://%s/api/v2/users/%s", domain, userID)
     
@@ -132,8 +131,9 @@ func (c *Auth0Client) GetUserMetadata(accessToken string, userID string) (Auth0U
     }
 
 	if res.StatusCode >= 400 {
-		log.Printf("Received error status from Auth0: %s", string(body))
-        return Auth0UserMetadata{}, err
+		errMsg := fmt.Sprintf("Received error status from Auth0: %s", string(body))
+    	log.Print(errMsg)
+    	return Auth0UserMetadata{}, errors.New(errMsg)
     }
 
 	

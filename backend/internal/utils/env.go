@@ -1,17 +1,17 @@
 package utils
 
 import (
-	"github.com/joho/godotenv"
-
 	"log"
 	"os"
+
+	"github.com/joho/godotenv"
 )
 
 type EnvConfig struct {
     RedisAddr                   string
-    MongoURI                    string
+    // MongoURI                    string
     Port                        string
-    DatabaseName                string
+    // DatabaseName                string
     SpotifyClientID             string
     SpotifyClientSecret         string
     SpotifyRedirectURI          string
@@ -22,20 +22,28 @@ type EnvConfig struct {
     Auth0ManagementClientSecret string
     Auth0Domain                 string
     OpenAIAPIKey                string
+    GinMode                     string
 }
 
 // Load the necessary ENV values
 func LoadENV() *EnvConfig {
-    if os.Getenv("MONGO_URI") == "" {
+    // if os.Getenv("MONGO_URI") == "" {
+    //     if err := godotenv.Load(); err != nil {
+    //         log.Print("No .env file found or environment variables not set in Docker")
+    //     }
+    // }
+
+    if os.Getenv("K_SERVICE") == "" {
         if err := godotenv.Load(); err != nil {
-            log.Print("No .env file found or environment variables not set in Docker")
+            log.Print("No .env file found, assuming cloud environment variables are set")
         }
     }
+
     return &EnvConfig{
         RedisAddr:                      os.Getenv("REDIS_ADDR"),
-        MongoURI:                       os.Getenv("MONGO_URI"),
+        // MongoURI:                       os.Getenv("MONGO_URI"),
         Port:                           defaultVal(os.Getenv("PORT"), "8080"),
-        DatabaseName:                   os.Getenv("MONGO_DB_NAME"),
+        // DatabaseName:                   os.Getenv("MONGO_DB_NAME"),
         SpotifyClientID:                os.Getenv("SPOTIFY_CLIENT_ID"),
         SpotifyClientSecret:            os.Getenv("SPOTIFY_CLIENT_SECRET"),
         SpotifyRedirectURI:             os.Getenv("SPOTIFY_REDIRECT_URI"),
@@ -46,6 +54,7 @@ func LoadENV() *EnvConfig {
         Auth0ManagementClientSecret:    os.Getenv("AUTH0_MANAGEMENT_CLIENT_SECRET"),
         Auth0Domain:                    os.Getenv("AUTH0_DOMAIN"),
         OpenAIAPIKey:                   os.Getenv("OPENAI_API_KEY"),
+        GinMode:                        os.Getenv("GIN_MODE"),
     }
 }
 

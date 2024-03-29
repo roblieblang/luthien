@@ -1,7 +1,7 @@
 package main
 
 import (
-	"context"
+	// "context"
 	"log"
 	"time"
 
@@ -12,7 +12,8 @@ import (
 	"github.com/roblieblang/luthien/backend/internal/auth/spotify"
 	"github.com/roblieblang/luthien/backend/internal/auth/youtube"
 	"github.com/roblieblang/luthien/backend/internal/config"
-	"github.com/roblieblang/luthien/backend/internal/user"
+
+	// "github.com/roblieblang/luthien/backend/internal/user"
 	"github.com/roblieblang/luthien/backend/internal/utils"
 	"gopkg.in/natefinch/lumberjack.v2"
 )
@@ -41,17 +42,17 @@ func main() {
 
     redisClient := config.NewRedisClient(envConfig.RedisAddr, "", 0)
 
-    mongoClient:= config.DBConnect(envConfig.MongoURI)
-    defer func() {
-        if err := mongoClient.Disconnect(context.Background()); err != nil {
-            log.Fatalf("Failed to disconnect MongoDB client: %v", err)
-        }
-    }()
+    // mongoClient:= config.DBConnect(envConfig.MongoURI)
+    // defer func() {
+    //     if err := mongoClient.Disconnect(context.Background()); err != nil {
+    //         log.Fatalf("Failed to disconnect MongoDB client: %v", err)
+    //     }
+    // }()
 
     appCtx := &utils.AppContext{
         EnvConfig:   envConfig,
         RedisClient: redisClient,
-        MongoClient: mongoClient,
+        // MongoClient: mongoClient,
     }
 
     router := gin.Default()
@@ -59,22 +60,22 @@ func main() {
     router.Use(LoggerMiddleware())
 
     router.Use(cors.New(cors.Config{
-        AllowOrigins:     []string{"http://localhost:8080", "http://localhost:5173"},
-		AllowMethods:     []string{"GET", "POST"},
+        AllowOrigins:     []string{"http://localhost:8080", "http://localhost:5173", "https://luthien.vercel.app"},
+		AllowMethods:     []string{"GET", "POST", "DELETE", "PATCH"},
 		AllowHeaders:     []string{"Content-Type", "Authorization"},
 		AllowCredentials: true,
     }))
 
 
     // User setup
-    userDAO := user.NewDAO(appCtx.MongoClient, appCtx.EnvConfig.DatabaseName, "users")
-    userService := user.NewUserService(userDAO)
-    userHandler := user.NewUserHandler(userService)
+    // userDAO := user.NewDAO(appCtx.MongoClient, appCtx.EnvConfig.DatabaseName, "users")
+    // userService := user.NewUserService(userDAO)
+    // userHandler := user.NewUserHandler(userService)
 
-    // User data endpoints
-    router.POST("/users", userHandler.CreateUser)
-    router.GET("/users", userHandler.GetAllUsers)
-    router.GET("/users/:id", userHandler.GetUser)
+    // // User data endpoints
+    // router.POST("/users", userHandler.CreateUser)
+    // router.GET("/users", userHandler.GetAllUsers)
+    // router.GET("/users/:id", userHandler.GetUser)
 
     // Auth0 setup
     auth0Client := auth0.NewAuth0Client(appCtx)
