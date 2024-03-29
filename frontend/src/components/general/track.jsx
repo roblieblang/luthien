@@ -71,7 +71,7 @@ export function ModalTrack({ track, destination, formattedLink, isHit }) {
             className="inline-block"
           >
             <h3 className="text-xs sm:text-sm md:text-lg lg:text-2xl font-bold text-slate-200 hover:text-blue-500 break-all">
-              {he.decode(track.channelTitle ?? "")}
+              {he.decode(title ?? "")}
             </h3>
           </a>
           <div className="text-xs lg:text-lg break-words">
