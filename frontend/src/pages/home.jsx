@@ -59,18 +59,18 @@ export default function Home() {
           <>
             {spotifyAuthStatus && youTubeAuthStatus && (
               <Link to="/music" style={{ zIndex: 10 }}>
-                <button className="hover:bg-white hover:text-customTertiary transition text-sm font-bold rounded bg-customSecondary">
+                <button className="hover:bg-white hover:text-customTertiary transition xl:scale-150 text-sm font-bold rounded bg-customSecondary">
                   <PiSwap size={50} />
                 </button>
               </Link>
             )}
-            <div className="flex space-x-20 -my-11">
+            <div className="flex space-x-20 -my-11 xl:scale-150">
               <YouTubeAuthButton />
               <SpotifyAuthButton />
             </div>
           </>
         )}
-        <div className="mt-20">
+        <div className="mt-20 xl:scale-150">
           <AuthenticationButton />
         </div>
       </div>

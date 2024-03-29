@@ -56,7 +56,7 @@ export function ModalTrack({ track, destination, formattedLink, isHit }) {
           {track.thumbnail && (
             <img
               src={track.thumbnail}
-              alt={title}
+              alt={he.decode(title)}
               className={`lg:h-28 lg:w-28 h-14 w-14 object-cover mr-2 border-2 rounded ${
                 isHit ? "border-green-700" : "border-red-800"
               }`}
@@ -71,18 +71,18 @@ export function ModalTrack({ track, destination, formattedLink, isHit }) {
             className="inline-block"
           >
             <h3 className="text-xs sm:text-sm md:text-lg lg:text-2xl font-bold text-slate-200 hover:text-blue-500 break-all">
-              {title}
+              {he.decode(title)}
             </h3>
           </a>
           <div className="text-xs lg:text-lg break-words">
             {destination === "spotify" ? (
               <>
-                <span>{artist}</span>
+                <span>{he.decode(artist)}</span>
                 <span className="mx-1">•</span>
-                <span>{track.album}</span>
+                <span>{he.decode(track.album)}</span>
               </>
             ) : (
-              <span>{track.channelTitle}</span>
+              <span>{he.decode(track.channelTitle)}</span>
             )}
           </div>
         </div>
@@ -96,7 +96,7 @@ export function ModalTrack({ track, destination, formattedLink, isHit }) {
         }`}
       >
         <h3 className="text-xs sm:text-sm md:text-lg lg:text-2xl font-bold text-slate-200 hover:text-blue-500 break-all">
-          {title}
+          {he.decode(title)}
         </h3>
       </div>
     );
