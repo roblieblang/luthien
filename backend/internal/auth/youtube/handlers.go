@@ -3,6 +3,7 @@ package youtube
 import (
 	"log"
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -87,7 +88,13 @@ func (h *YouTubeHandler) CallbackHandler(c *gin.Context) {
         c.JSON(statusCode, gin.H{"error": err.Error()})
         return
     }
-    c.JSON(http.StatusOK, gin.H{"redirectURL": "http://localhost:5173/"})
+
+    redirectURL := "http://localhost:5173/"
+    if os.Getenv("GIN_MODE") == "release" {
+        redirectURL = os.Getenv("DEPLOYED_UI_URL")
+    }
+    
+    c.JSON(http.StatusOK, gin.H{"redirectURL": redirectURL})
 }
 
 // Checks YouTube authentication status for a specific user

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 
@@ -63,7 +64,13 @@ func (h *SpotifyHandler) CallbackHandler(c *gin.Context) {
         c.JSON(statusCode, gin.H{"error": err.Error()})
         return
     }
-    c.JSON(http.StatusOK, gin.H{"redirectURL": "http://localhost:5173/"})
+
+    redirectURL := "http://localhost:5173/"
+    if os.Getenv("GIN_MODE") == "release" {
+        redirectURL = os.Getenv("DEPLOYED_UI_URL")
+    }
+    
+    c.JSON(http.StatusOK, gin.H{"redirectURL": redirectURL})
 }
 
 // Checks Spotify authentication status for a specific user
