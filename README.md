@@ -9,8 +9,8 @@ I built a playlist conversion application for cross-platform listening between S
     </a>
   </li>
   <li>
-    <a href="" target="_blank">
-      Video (coming soon)
+    <a href="https://youtu.be/FOItY3HnoPs" target="_blank">
+      Demo Video
     </a>
   </li>
 </ul>
