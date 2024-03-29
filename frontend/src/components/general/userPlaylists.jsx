@@ -103,7 +103,7 @@ export default function UserPlaylists({ serviceType }) {
 
   return (
     <div className="flex flex-col items-center justify-center">
-      <h2 className="text-xl font-semibold">Playlists</h2>
+      <h2 className="text-xl text-white font-semibold">Playlists</h2>
       {playlists.map((playlist) => (
         <PlaylistComponent key={playlist.id} playlist={playlist} />
       ))}

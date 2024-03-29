@@ -2,7 +2,7 @@ import he from "he";
 
 export function Track({ track, source, formattedLink }) {
   return (
-    <div className="bg-customBG rounded border-customParagraph border-solid border-2 p-2 my-0.5 flex lg:w-1/2 w-11/12">
+    <div className="text-white bg-customBG rounded border-customParagraph border-solid border-2 p-2 my-0.5 flex lg:w-1/2 w-11/12">
       <div className="flex-none">
         {(track.thumbnailUrl || track.thumbnail) && (
           <img
@@ -23,7 +23,7 @@ export function Track({ track, source, formattedLink }) {
             {he.decode(track.title ?? "")}
           </h3>
         </a>
-        <div className="lg:text-lg text-xs">
+        <div className="lg:text-lg text-xs text-white">
           <span>{source.charAt(0).toUpperCase() + source.slice(1)}</span>
           <span className="mx-2">•</span>
           {source === "spotify" ? (
@@ -74,7 +74,7 @@ export function ModalTrack({ track, destination, formattedLink, isHit }) {
               {he.decode(title ?? "")}
             </h3>
           </a>
-          <div className="text-xs lg:text-lg break-words">
+          <div className="text-xs lg:text-lg break-words text-white">
             {destination === "spotify" ? (
               <>
                 <span>{he.decode(artist ?? "")}</span>

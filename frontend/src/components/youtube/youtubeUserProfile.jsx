@@ -11,7 +11,9 @@ export default function YouTubeUserProfile() {
 
   return (
     <div>
-      <h1 className="font-bold text-lg">{user.name}&apos;s YouTube Account</h1>
+      <h1 className="font-bold text-lg text-white">
+        {user.name}&apos;s YouTube Account
+      </h1>
       <UserPlaylists serviceType={"youtube"} />
     </div>
   );

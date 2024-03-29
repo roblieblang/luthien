@@ -39,7 +39,7 @@ export default function YouTubePlaylist({ playlist }) {
           </div>
         )}
       </div>
-      <div className="xl:-mt-2 lg:text-lg text-xs">
+      <div className="xl:-mt-2 lg:text-lg text-xs text-white">
         <span>
           {playlist.videosCount}{" "}
           {playlist.videosCount === 1 ? "track" : "tracks"}

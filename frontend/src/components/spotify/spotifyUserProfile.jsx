@@ -38,7 +38,7 @@ export default function SpotifyUserProfile() {
 
   return (
     <div>
-      <h1 className="font-bold text-lg">
+      <h1 className="font-bold text-lg text-white">
         {profile.display_name}&apos;s Spotify Account
       </h1>
 

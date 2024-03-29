@@ -46,7 +46,7 @@ export default function SpotifyPlaylist({ playlist }) {
       </div>
 
       {/* Bottom Row: Track Total and Owner */}
-      <div className="xl:-mt-2 lg:text-lg text-xs">
+      <div className="xl:-mt-2 lg:text-lg text-xs text-white">
         <span>
           {playlist.tracks.total}{" "}
           {playlist.tracks.total === 1 ? "track" : "tracks"}

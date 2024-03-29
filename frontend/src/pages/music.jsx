@@ -103,9 +103,9 @@ export default function Music() {
         <BasicHeading text="Get Started" />
       </div>
       <div className="-mt-6">
-        <h1>Select Playlist Source</h1>
+        <h1 className="text-white">Select Playlist Source</h1>
         <div className="flex justify-center p-2">
-          <div className="flex items-center space-x-6 text-3xl cursor-pointer">
+          <div className="text-white flex items-center space-x-6 text-3xl cursor-pointer">
             <FaSpotify
               className={`lg:scale-125 hover:text-green-400 ${
                 playlistSource === "spotify" &&
