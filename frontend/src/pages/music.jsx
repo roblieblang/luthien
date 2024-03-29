@@ -130,7 +130,7 @@ export default function Music() {
       {playlistSource === "spotify" && <SpotifyUserProfile />}
       {playlistSource === "youtube" && <YouTubeUserProfile />}
       {playlistSource === "spotify" && (
-        <div className="flex lg:justify-center lg:space-x-10 justify-between mx-10 mt-2">
+        <div className="flex lg:justify-center lg:space-x-10 justify-between mx-10 mt-2 text-white">
           {playlistsListCurrentPage > 1 && (
             <LinkButton text="Previous" onClick={handlePrevious} />
           )}
