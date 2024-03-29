@@ -54,7 +54,7 @@ export const UserProvider = ({ children }) => {
   // Spotify
   useEffect(() => {
     checkAuthStatus(
-      `${config.backendUrl}/auth/spotify/check-auth?userID=${userID}`,
+      `${config.backendUrl}/auth/spotify/check-auth`,
       setSpotifyAuthStatus
     );
   }, [userID, checkAuthStatus]);
@@ -62,8 +62,8 @@ export const UserProvider = ({ children }) => {
   // Google/YouTube
   useEffect(() => {
     checkAuthStatus(
-      `${config.backendUrl}/auth/google/check-auth?userID=${userID}`,
-      setYouTubeAuthStatus
+      `${config.backendUrl}/auth/google/check-auth`,
+      setSpotifyAuthStatus
     );
   }, [userID, checkAuthStatus]);
 
