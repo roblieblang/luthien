@@ -7,7 +7,7 @@ export function Track({ track, source, formattedLink }) {
         {(track.thumbnailUrl || track.thumbnail) && (
           <img
             src={track.thumbnailUrl || track.thumbnail}
-            alt={he.decode(track.title)}
+            alt={he.decode(track.title ?? "")}
             className="lg:h-28 lg:w-28 h-14 w-14 object-cover mr-2 border-2 rounded"
           />
         )}
@@ -20,7 +20,7 @@ export function Track({ track, source, formattedLink }) {
           className="inline-block"
         >
           <h3 className="lg:text-2xl text-sm font-bold text-slate-200 hover:text-blue-500">
-            {he.decode(track.title)}
+            {he.decode(track.title ?? "")}
           </h3>
         </a>
         <div className="lg:text-lg text-xs">
@@ -28,12 +28,12 @@ export function Track({ track, source, formattedLink }) {
           <span className="mx-2">•</span>
           {source === "spotify" ? (
             <>
-              <span>{he.decode(track.artist)}</span>
+              <span>{he.decode(track.artist ?? "")}</span>
               <span className="mx-2">•</span>
-              <span>{he.decode(track.album)}</span>{" "}
+              <span>{he.decode(track.album ?? "")}</span>{" "}
             </>
           ) : (
-            <span>{he.decode(track.channelTitle)}</span>
+            <span>{he.decode(track.channelTitle ?? "")}</span>
           )}
         </div>
       </div>
@@ -56,7 +56,7 @@ export function ModalTrack({ track, destination, formattedLink, isHit }) {
           {track.thumbnail && (
             <img
               src={track.thumbnail}
-              alt={he.decode(title)}
+              alt={he.decode(title ?? "")}
               className={`lg:h-28 lg:w-28 h-14 w-14 object-cover mr-2 border-2 rounded ${
                 isHit ? "border-green-700" : "border-red-800"
               }`}
@@ -71,18 +71,18 @@ export function ModalTrack({ track, destination, formattedLink, isHit }) {
             className="inline-block"
           >
             <h3 className="text-xs sm:text-sm md:text-lg lg:text-2xl font-bold text-slate-200 hover:text-blue-500 break-all">
-              {he.decode(title)}
+              {he.decode(track.channelTitle ?? "")}
             </h3>
           </a>
           <div className="text-xs lg:text-lg break-words">
             {destination === "spotify" ? (
               <>
-                <span>{he.decode(artist)}</span>
+                <span>{he.decode(artist ?? "")}</span>
                 <span className="mx-1">•</span>
-                <span>{he.decode(track.album)}</span>
+                <span>{he.decode(track.album ?? "")}</span>
               </>
             ) : (
-              <span>{he.decode(track.channelTitle)}</span>
+              <span>{he.decode(track.channelTitle ?? "")}</span>
             )}
           </div>
         </div>
@@ -96,7 +96,7 @@ export function ModalTrack({ track, destination, formattedLink, isHit }) {
         }`}
       >
         <h3 className="text-xs sm:text-sm md:text-lg lg:text-2xl font-bold text-slate-200 hover:text-blue-500 break-all">
-          {he.decode(title)}
+          {he.decode(track.channelTitle ?? "")}
         </h3>
       </div>
     );

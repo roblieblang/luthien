@@ -19,7 +19,7 @@ export default function YouTubePlaylist({ playlist }) {
           className="inline-block ml-1"
         >
           <h3 className="lg:text-xl text-sm font-bold text-slate-200 hover:text-blue-500">
-            {he.decode(playlist.title)}
+            {he.decode(playlist.title ?? "")}
           </h3>
         </a>
         {playlist.videosCount > 0 && (
@@ -45,7 +45,7 @@ export default function YouTubePlaylist({ playlist }) {
           {playlist.videosCount === 1 ? "track" : "tracks"}
         </span>
         <span className="mx-2">•</span>
-        <span>Created by {he.decode(playlist.channelTitle)}</span>
+        <span>Created by {he.decode(playlist.channelTitle ?? "")}</span>
         {playlist.privacyStatus && (
           <>
             <span className="mx-2">•</span>

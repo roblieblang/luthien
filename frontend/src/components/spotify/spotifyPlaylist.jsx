@@ -23,7 +23,7 @@ export default function SpotifyPlaylist({ playlist }) {
           className="inline-block ml-1"
         >
           <h3 className="lg:text-xl text-sm font-bold text-slate-200 hover:text-blue-500">
-            {he.decode(playlist.name)}
+            {he.decode(playlist.name ?? "")}
           </h3>
         </a>
         {playlist.tracks.total > 0 && (
@@ -52,7 +52,7 @@ export default function SpotifyPlaylist({ playlist }) {
           {playlist.tracks.total === 1 ? "track" : "tracks"}
         </span>
         <span className="mx-2">•</span>
-        <span>Created by {he.decode(playlist.owner.display_name)}</span>
+        <span>Created by {he.decode(playlist.owner.display_name ?? "")}</span>
         <span className="mx-2">•</span>
         <span>{playlist.public ? "Public" : "Private"}</span>
       </div>
