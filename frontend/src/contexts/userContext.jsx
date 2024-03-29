@@ -63,7 +63,7 @@ export const UserProvider = ({ children }) => {
   useEffect(() => {
     checkAuthStatus(
       `${config.backendUrl}/auth/google/check-auth`,
-      setSpotifyAuthStatus
+      setYouTubeAuthStatus
     );
   }, [userID, checkAuthStatus]);
 
