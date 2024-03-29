@@ -3,6 +3,7 @@ package main
 import (
 	// "context"
 	"log"
+	"os"
 	"time"
 
 	"github.com/gin-contrib/cors"
@@ -60,7 +61,7 @@ func main() {
     router.Use(LoggerMiddleware())
 
     router.Use(cors.New(cors.Config{
-        AllowOrigins:     []string{"http://localhost:8080", "http://localhost:5173", "https://luthien.vercel.app"},
+        AllowOrigins:     []string{"http://localhost:8080", "http://localhost:5173", os.Getenv("DEPLOYED_SERVER_URL"), os.Getenv("DEPLOYED_UI_URL") },
 		AllowMethods:     []string{"GET", "POST", "DELETE", "PATCH"},
 		AllowHeaders:     []string{"Content-Type", "Authorization"},
 		AllowCredentials: true,
