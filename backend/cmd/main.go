@@ -4,6 +4,7 @@ import (
 	// "context"
 	"log"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/gin-contrib/cors"
@@ -60,11 +61,31 @@ func main() {
 
     router.Use(LoggerMiddleware())
 
+    deployedServerURL := os.Getenv("DEPLOYED_SERVER_URL")
+    deployedUIURL := os.Getenv("DEPLOYED_UI_URL")
+
+    if deployedServerURL == "" || !strings.HasPrefix(deployedServerURL, "http") {
+        log.Println("DEPLOYED_SERVER_URL is not set or invalid. CORS configuration for this origin will be skipped.")
+        deployedServerURL = ""
+    }
+    if deployedUIURL == "" || !strings.HasPrefix(deployedUIURL, "http") {
+        log.Println("DEPLOYED_UI_URL is not set or invalid. CORS configuration for this origin will be skipped.")
+        deployedUIURL = ""
+    }
+
+    validOrigins := []string{"http://localhost:8080", "http://localhost:5173"}
+    if deployedServerURL != "" {
+        validOrigins = append(validOrigins, deployedServerURL)
+    }
+    if deployedUIURL != "" {
+        validOrigins = append(validOrigins, deployedUIURL)
+    }
+
     router.Use(cors.New(cors.Config{
-        AllowOrigins:     []string{"http://localhost:8080", "http://localhost:5173", os.Getenv("DEPLOYED_SERVER_URL"), os.Getenv("DEPLOYED_UI_URL") },
-		AllowMethods:     []string{"GET", "POST", "DELETE", "PATCH"},
-		AllowHeaders:     []string{"Content-Type", "Authorization"},
-		AllowCredentials: true,
+        AllowOrigins:     validOrigins,
+        AllowMethods:     []string{"GET", "POST", "DELETE", "PATCH"},
+        AllowHeaders:     []string{"Content-Type", "Authorization"},
+        AllowCredentials: true,
     }))
 
 
