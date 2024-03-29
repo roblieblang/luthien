@@ -17,7 +17,7 @@ import (
 
 	// "github.com/roblieblang/luthien/backend/internal/user"
 	"github.com/roblieblang/luthien/backend/internal/utils"
-	"gopkg.in/natefinch/lumberjack.v2"
+	// "gopkg.in/natefinch/lumberjack.v2"
 )
 
 func LoggerMiddleware() gin.HandlerFunc {
@@ -32,13 +32,13 @@ func LoggerMiddleware() gin.HandlerFunc {
 }
 
 func main() {
-    log.SetOutput(&lumberjack.Logger{
-		Filename:   "./logs/server.log",
-		MaxSize:    10, // megabytes
-		MaxBackups: 3,
-		MaxAge:     7, // days
-		Compress:   true, // compress rolled back files
-	})
+    // log.SetOutput(&lumberjack.Logger{
+	// 	Filename:   "./logs/server.log",
+	// 	MaxSize:    10, // megabytes
+	// 	MaxBackups: 3,
+	// 	MaxAge:     7, // days
+	// 	Compress:   true, // compress rolled back files
+	// })
 
     envConfig := utils.LoadENV()
 

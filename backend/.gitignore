@@ -46,3 +46,5 @@ Thumbs.db
 /.cache
 /.modcache
 /tmp
+
+env_vars.yaml
