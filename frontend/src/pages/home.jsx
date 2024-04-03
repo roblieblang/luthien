@@ -86,7 +86,7 @@ export default function Home() {
                 </button>
               </Link>
             )}
-            <div className="flex space-x-14 -my-11">
+            <div className="flex space-x-14 -my-5">
               <YouTubeAuthButton />
               <SpotifyAuthButton />
             </div>
