@@ -1,5 +1,6 @@
 import { useAuth0 } from "@auth0/auth0-react";
 import { useEffect } from "react";
+import { FaSpotify, FaYoutube } from "react-icons/fa";
 import { PiSwap } from "react-icons/pi";
 import { Link, useNavigate } from "react-router-dom";
 import "../App.css";
@@ -50,27 +51,49 @@ export default function Home() {
   }, [navigate]);
 
   return (
-    <div className="flex items-center justify-center text-center">
-      <div className="mt-5">
-        <BasicHeading text="Convert Your Playlists" />
+    <div className="flex flex-col items-center justify-center min-h-screen p-3 -mt-10 text-customButtonText">
+      <div className="text-center space-y-4">
+        <h1 className="text-xl font-extrabold text-customStroke">
+          Seamlessly Sync Your Playlists Between Spotify and YouTube
+        </h1>
+        <h2 className="text-lg text-customStroke">
+          Connect your accounts and let Luthien handle the rest.
+        </h2>
       </div>
-      <div className="absolute inset-0 flex flex-col items-center justify-center -mt-40">
+
+      <div className="my-8 text-center">
+        <h3 className="text-sm font-semibold mb-4">Why Luthien?</h3>
+        <ul className="list-none list-inside space-y-2 text-xs">
+          <li>Fast and easy playlist conversion</li>
+          <li>Secure connection to your music accounts</li>
+          <li>Intuitive design for effortless navigation</li>
+        </ul>
+      </div>
+
+      <div className="flex space-x-3 justify-center items-center my-6">
+        <FaSpotify className="text-4xl text-green-600" />
+        <FaYoutube className="text-4xl text-red-600" />
+        <p className="text-lg">Bring your music together</p>
+      </div>
+
+      <div className="space-y-4">
         {isAuthenticated && (
           <>
             {spotifyAuthStatus && youTubeAuthStatus && (
               <Link to="/music" style={{ zIndex: 10 }}>
                 <button className="hover:bg-white hover:text-customTertiary transition xl:scale-150 text-sm font-bold rounded bg-customSecondary">
                   <PiSwap size={50} />
+                  Start Syncing
                 </button>
               </Link>
             )}
-            <div className="flex space-x-20 -my-11 xl:scale-150">
+            <div className="flex space-x-10 justify-center mt-4">
               <YouTubeAuthButton />
               <SpotifyAuthButton />
             </div>
           </>
         )}
-        <div className="mt-20 xl:scale-150">
+        <div className="xl:scale-150 flex items-center">
           <AuthenticationButton />
         </div>
       </div>
