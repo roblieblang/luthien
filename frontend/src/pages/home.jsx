@@ -83,17 +83,16 @@ export default function Home() {
               <Link to="/music" style={{ zIndex: 10 }}>
                 <button className="hover:bg-white hover:text-customTertiary transition xl:scale-150 text-sm font-bold rounded bg-customSecondary">
                   <PiSwap size={50} />
-                  Start Syncing
                 </button>
               </Link>
             )}
-            <div className="flex space-x-10 justify-center mt-4">
+            <div className="flex space-x-14 -my-11">
               <YouTubeAuthButton />
               <SpotifyAuthButton />
             </div>
           </>
         )}
-        <div className="xl:scale-150 flex items-center">
+        <div className="xl:scale-150 mt-10">
           <AuthenticationButton />
         </div>
       </div>
