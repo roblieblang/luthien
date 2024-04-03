@@ -96,7 +96,7 @@ export default function Home() {
         </div>
       </div>
 
-      <div className="sm:-mt-8 mb-10 sm:mb-0 mt-8">
+      <div className="mt-4 sm:mt-8 mb-10 sm:mb-20">
         <AuthenticationButton />
       </div>
 
