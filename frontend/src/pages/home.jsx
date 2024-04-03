@@ -76,11 +76,11 @@ export default function Home() {
         <p className="text-lg">Bring your music together</p>
       </div>
 
-      <div className="absolute inset-0 flex flex-col items-center justify-center -mt-10">
+      <div className="absolute inset-0 flex flex-col items-center justify-center mt-5">
         {isAuthenticated && (
           <>
             {spotifyAuthStatus && youTubeAuthStatus && (
-              <Link to="/music" style={{ zIndex: 10 }}>
+              <Link to="/music" style={{ zIndex: 10, marginBottom: -2 }}>
                 <button className="hover:bg-white hover:text-customTertiary transition xl:scale-150 text-sm font-bold rounded bg-customSecondary">
                   <PiSwap size={50} />
                 </button>
@@ -92,7 +92,7 @@ export default function Home() {
             </div>
           </>
         )}
-        <div className="xl:scale-150 mt-10">
+        <div className="xl:scale-150 mt-8">
           <AuthenticationButton />
         </div>
       </div>
