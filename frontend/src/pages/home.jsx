@@ -52,7 +52,7 @@ export default function Home() {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-4 text-customButtonText">
-      <div className="text-center space-y-4 max-w-lg mx-auto">
+      <div className="sm:mt-0 -mt-4 text-center space-y-2 max-w-lg mx-auto">
         <h1 className="text-xl sm:text-2xl font-extrabold text-customStroke">
           Seamlessly Sync Your Playlists Between Spotify and YouTube
         </h1>
@@ -61,7 +61,7 @@ export default function Home() {
         </h2>
       </div>
 
-      <div className="-mt-6 sm:mt-0 my-8 text-center space-y-4 max-w-lg mx-auto">
+      <div className="-mt-3 sm:mt-0 my-8 text-center space-y-4 max-w-lg mx-auto">
         <h3 className="text-sm sm:text-lg font-semibold">Why Luthien?</h3>
         <ul className="list-none list-inside">
           <li>Fast and easy playlist conversion</li>
