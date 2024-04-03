@@ -61,9 +61,9 @@ export default function Home() {
         </h2>
       </div>
 
-      <div className="my-8 text-center space-y-4 max-w-lg mx-auto">
+      <div className="-mt-6 sm:mt-0 my-8 text-center space-y-4 max-w-lg mx-auto">
         <h3 className="text-sm sm:text-lg font-semibold">Why Luthien?</h3>
-        <ul className="list-disc list-inside">
+        <ul className="list-none list-inside">
           <li>Fast and easy playlist conversion</li>
           <li>Secure connection to your music accounts</li>
           <li>Intuitive design for effortless navigation</li>
