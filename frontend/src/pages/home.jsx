@@ -70,7 +70,7 @@ export default function Home() {
         </ul>
       </div>
 
-      <div className="my-6 text-center space-y-4">
+      <div className="-mt-6 sm:mt-0 my-6 text-center space-y-4">
         <div className="flex justify-center items-center text-lg gap-3">
           <FaSpotify className="text-5xl text-green-600" />
           <FaYoutube className="text-5xl text-red-600" />
