@@ -24,7 +24,7 @@ const AuthenticationButton = () => {
         })
       }
     >
-      Log In
+      Get Started
     </button>
   );
 };
