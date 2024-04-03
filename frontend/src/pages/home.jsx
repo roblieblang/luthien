@@ -51,7 +51,7 @@ export default function Home() {
   }, [navigate]);
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-3 -mt-10 text-customButtonText">
+    <div className="flex flex-col items-center justify-center min-h-screen p-3 text-customButtonText">
       <div className="text-center space-y-4">
         <h1 className="text-xl font-extrabold text-customStroke">
           Seamlessly Sync Your Playlists Between Spotify and YouTube
@@ -70,32 +70,31 @@ export default function Home() {
         </ul>
       </div>
 
-      <div className="flex space-x-3 justify-center items-center my-6">
-        <FaSpotify className="text-4xl text-green-600" />
-        <FaYoutube className="text-4xl text-red-600" />
-        <p className="text-lg">Bring your music together</p>
+      <div className="flex flex-col items-center justify-center space-y-6">
+        <div className="flex justify-center items-center space-x-3">
+          <FaSpotify className="text-4xl text-green-600" />
+          <FaYoutube className="text-4xl text-red-600" />
+          <p className="text-lg">Bring your music together</p>
+        </div>
+
+        {isAuthenticated && spotifyAuthStatus && youTubeAuthStatus && (
+          <div className="flex justify-center items-center space-x-10">
+            <YouTubeAuthButton />
+            <Link to="/music">
+              <button className="transition duration-300 ease-in-out transform hover:scale-110 text-white bg-blue-600 hover:bg-blue-700 font-bold rounded-lg px-5 py-2 text-sm">
+                <PiSwap size={24} className="inline mr-2" />
+                Start Syncing
+              </button>
+            </Link>
+            <SpotifyAuthButton />
+          </div>
+        )}
       </div>
 
-      <div className="absolute inset-0 flex flex-col items-center justify-center mt-5">
-        {isAuthenticated && (
-          <>
-            {spotifyAuthStatus && youTubeAuthStatus && (
-              <Link to="/music" style={{ zIndex: 10, marginBottom: -2 }}>
-                <button className="hover:bg-white hover:text-customTertiary transition xl:scale-150 text-sm font-bold rounded bg-customSecondary">
-                  <PiSwap size={50} />
-                </button>
-              </Link>
-            )}
-            <div className="flex space-x-20">
-              <YouTubeAuthButton />
-              <SpotifyAuthButton />
-            </div>
-          </>
-        )}
-        <div className="xl:scale-150 mt-8">
-          <AuthenticationButton />
-        </div>
+      <div className="mt-8">
+        <AuthenticationButton />
       </div>
+
       <Footer />
     </div>
   );
