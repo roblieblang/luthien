@@ -1,5 +1,6 @@
 import { useAuth0 } from "@auth0/auth0-react";
 import { useEffect } from "react";
+import { FaSpotify, FaYoutube } from "react-icons/fa";
 import { PiSwap } from "react-icons/pi";
 import { Link, useNavigate } from "react-router-dom";
 import "../App.css";
@@ -50,30 +51,55 @@ export default function Home() {
   }, [navigate]);
 
   return (
-    <div className="flex items-center justify-center text-center">
-      <div className="mt-5">
-        <BasicHeading text="Convert Your Playlists" />
+    <div className="flex flex-col items-center justify-center min-h-screen p-4 text-customButtonText">
+      <div className="sm:mt-0 -mt-4 text-center space-y-2 max-w-lg mx-auto">
+        <h1 className="text-xl sm:text-2xl font-extrabold text-customStroke">
+          Seamlessly Sync Your Playlists Between Spotify and YouTube
+        </h1>
+        <h2 className="text-md sm:text-lg text-customStroke">
+          Connect your accounts and let Luthien handle the rest.
+        </h2>
       </div>
-      <div className="absolute inset-0 flex flex-col items-center justify-center -mt-40">
-        {isAuthenticated && (
-          <>
-            {spotifyAuthStatus && youTubeAuthStatus && (
-              <Link to="/music" style={{ zIndex: 10 }}>
-                <button className="hover:bg-white hover:text-customTertiary transition xl:scale-150 text-sm font-bold rounded bg-customSecondary">
-                  <PiSwap size={50} />
-                </button>
-              </Link>
-            )}
-            <div className="flex space-x-20 -my-11 xl:scale-150">
-              <YouTubeAuthButton />
-              <SpotifyAuthButton />
-            </div>
-          </>
-        )}
-        <div className="mt-20 xl:scale-150">
-          <AuthenticationButton />
+
+      <div className="my-8 text-center space-y-2 max-w-lg mx-auto">
+        <h3 className="text-sm sm:text-lg font-semibold">Why Luthien?</h3>
+        <ul className="list-none list-inside">
+          <li>Fast and easy playlist conversion</li>
+          <li>Secure connection to your music accounts</li>
+          <li>Intuitive design for effortless navigation</li>
+        </ul>
+      </div>
+
+      <div className="-mt-6 sm:mt-0 my-6 text-center space-y-4">
+        <div className="flex justify-center items-center text-lg gap-3">
+          <FaSpotify className="text-5xl text-green-600" />
+          <FaYoutube className="text-5xl text-red-600" />
+          <p>Bring your music together</p>
+        </div>
+
+        <div className="flex justify-center items-center gap-2 flex-wrap">
+          <div className="order-1 sm:order-1">
+            <YouTubeAuthButton />
+          </div>
+          <div className="order-3 sm:order-2">
+            <Link
+              to="/music"
+              className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded inline-flex items-center justify-center"
+            >
+              <PiSwap className="mr-2" size={24} />
+              <span>Start Syncing</span>
+            </Link>
+          </div>
+          <div className="order-2 sm:order-3">
+            <SpotifyAuthButton />
+          </div>
         </div>
       </div>
+
+      <div className="mt-4 sm:mt-8 mb-10 sm:mb-20">
+        <AuthenticationButton />
+      </div>
+
       <Footer />
     </div>
   );
