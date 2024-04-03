@@ -76,7 +76,7 @@ export default function Home() {
         <p className="text-lg">Bring your music together</p>
       </div>
 
-      <div className="space-y-4">
+      <div className="absolute inset-0 flex flex-col items-center justify-center -mt-40">
         {isAuthenticated && (
           <>
             {spotifyAuthStatus && youTubeAuthStatus && (
@@ -86,7 +86,7 @@ export default function Home() {
                 </button>
               </Link>
             )}
-            <div className="flex space-x-14 -my-5">
+            <div className="flex space-x-14">
               <YouTubeAuthButton />
               <SpotifyAuthButton />
             </div>
