@@ -51,9 +51,9 @@ export default function Home() {
   }, [navigate]);
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-3 text-customButtonText">
-      <div className="text-center space-y-4">
-        <h1 className="text-xl font-extrabold text-customStroke">
+    <div className="flex flex-col items-center justify-center min-h-screen p-4 text-customButtonText overflow-hidden">
+      <div className="text-center space-y-4 max-w-md mx-auto">
+        <h1 className="text-2xl font-extrabold text-customStroke">
           Seamlessly Sync Your Playlists Between Spotify and YouTube
         </h1>
         <h2 className="text-lg text-customStroke">
@@ -61,30 +61,31 @@ export default function Home() {
         </h2>
       </div>
 
-      <div className="my-8 text-center">
-        <h3 className="text-sm font-semibold mb-4">Why Luthien?</h3>
-        <ul className="list-none list-inside space-y-2 text-xs">
+      <div className="text-center space-y-4 my-8 max-w-md mx-auto">
+        <h3 className="text-xl font-semibold">Why Luthien?</h3>
+        <ul className="space-y-2">
           <li>Fast and easy playlist conversion</li>
           <li>Secure connection to your music accounts</li>
           <li>Intuitive design for effortless navigation</li>
         </ul>
       </div>
 
-      <div className="flex flex-col items-center justify-center space-y-6">
-        <div className="flex justify-center items-center space-x-3">
-          <FaSpotify className="text-4xl text-green-600" />
-          <FaYoutube className="text-4xl text-red-600" />
+      <div className="my-6 space-y-4">
+        <div className="flex flex-wrap justify-center items-center space-x-3">
+          <FaSpotify className="text-5xl text-green-600" />
+          <FaYoutube className="text-5xl text-red-600" />
           <p className="text-lg">Bring your music together</p>
         </div>
 
         {isAuthenticated && spotifyAuthStatus && youTubeAuthStatus && (
-          <div className="flex justify-center items-center space-x-10">
+          <div className="flex flex-wrap justify-center items-center space-x-2 space-y-4">
             <YouTubeAuthButton />
-            <Link to="/music">
-              <button className="transition duration-300 ease-in-out transform hover:scale-110 text-white bg-blue-600 hover:bg-blue-700 font-bold rounded-lg px-5 py-2 text-sm">
-                <PiSwap size={24} className="inline mr-2" />
-                Start Syncing
-              </button>
+            <Link
+              to="/music"
+              className="flex justify-center items-center px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition-all ease-in-out"
+            >
+              <PiSwap className="text-2xl" />
+              <span className="ml-2">Start Syncing</span>
             </Link>
             <SpotifyAuthButton />
           </div>
