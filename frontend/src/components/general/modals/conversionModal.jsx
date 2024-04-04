@@ -26,7 +26,7 @@ export default function ConversionModal({
   const [adjustedSearchHits, setAdjustedSearchHits] = useState([]);
   const [adjustedSearchMisses, setAdjustedSearchMisses] = useState([]);
 
-  const stockDescription = `Playlist converted from ${source} to ${destination} with Luthien: ${config.backendUrl}`;
+  const stockDescription = `Playlist converted from ${source} to ${destination} with Luthien: ${config.frontendUrl}`;
 
   const fetchSpotifyUserId = async () => {
     fetch(`${config.backendUrl}/spotify/current-profile?userID=${userID}`)
