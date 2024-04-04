@@ -77,23 +77,29 @@ export default function Home() {
           <p>Bring your music together</p>
         </div>
 
-        <div className="flex justify-center items-center gap-2 flex-wrap">
-          <div className="order-1 sm:order-1">
-            <YouTubeAuthButton />
+        {isAuthenticated && (
+          <div className="flex justify-center items-center gap-2 flex-wrap">
+            <div className="order-1 sm:order-1">
+              <YouTubeAuthButton />
+            </div>
+
+            {spotifyAuthStatus && youTubeAuthStatus && (
+              <div className="order-3 sm:order-2">
+                <Link
+                  to="/music"
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded inline-flex items-center justify-center"
+                >
+                  <PiSwap className="mr-2" size={24} />
+                  <span>Start Syncing</span>
+                </Link>
+              </div>
+            )}
+
+            <div className="order-2 sm:order-3">
+              <SpotifyAuthButton />
+            </div>
           </div>
-          <div className="order-3 sm:order-2">
-            <Link
-              to="/music"
-              className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded inline-flex items-center justify-center"
-            >
-              <PiSwap className="mr-2" size={24} />
-              <span>Start Syncing</span>
-            </Link>
-          </div>
-          <div className="order-2 sm:order-3">
-            <SpotifyAuthButton />
-          </div>
-        </div>
+        )}
       </div>
 
       <div className="mt-4 sm:mt-8 mb-10 sm:mb-20">
