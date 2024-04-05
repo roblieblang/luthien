@@ -12,7 +12,7 @@ export default function Footer() {
           className="text-xs text-white"
           target="_blank"
           rel="noreferrer noopener"
-          href="https://docs.google.com/document/d/15vZrsNrQYvpYGiOf0ifh95p6uoQIfcIK91kzO_SjO6k/edit?usp=sharing"
+          href="/privacy"
         >
           Privacy Policy
         </a>

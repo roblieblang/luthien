@@ -4,7 +4,7 @@ import Conversion from "./pages/conversion";
 import GoogleCallback from "./pages/googleCallback";
 import Home from "./pages/home";
 import Music from "./pages/music";
-import Profile from "./pages/profile";
+import PrivacyPolicy from "./pages/privacyPolicy";
 import SpotifyCallback from "./pages/spotifyCallback";
 
 export default function App() {
@@ -12,6 +12,7 @@ export default function App() {
     <>
       <Routes>
         <Route path="/" element={<Home />} />
+        <Route path="/privacy" element={<PrivacyPolicy />} />
         <Route path="/spotify/callback" element={<SpotifyCallback />} />
         <Route path="/google/callback" element={<GoogleCallback />} />
         <Route
