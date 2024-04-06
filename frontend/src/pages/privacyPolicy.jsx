@@ -16,8 +16,10 @@ export default function PrivacyPolicy() {
           the target service. This Privacy Policy outlines how we collect, use,
           and share information about you through Luthien accessible at{" "}
           <a
+            target="_blank"
             href="https://luthien.vercel.app/"
             className="text-blue-600 hover:underline"
+            rel="noreferrer"
           >
             https://luthien.vercel.app/
           </a>
@@ -98,9 +100,19 @@ export default function PrivacyPolicy() {
         </h2>
         <p>
           Luthien's use and transfer of information received from Google APIs
-          will adhere to the Google API Services User Data Policy, including the
-          Limited Use requirements. This ensures your data is handled securely
-          and in accordance with privacy standards.
+          will adhere to the{" "}
+          <a
+            href="https://developers.google.com/terms/api-services-user-data-policy"
+            target="_blank"
+            className="text-blue-600 hover:underline"
+            rel="noreferrer"
+          >
+            Google API Services User Data Policy
+          </a>
+          , including the Limited Use requirements. By using Luthien, you agree
+          to our Privacy Policy, Terms of Service, and are subject to the Google
+          API Services User Data Policy. This ensures your data is handled
+          securely and in accordance with privacy standards.
         </p>
       </section>
       <section className="mt-8">
