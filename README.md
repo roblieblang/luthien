@@ -9,7 +9,7 @@ I built a playlist conversion application for cross-platform listening between S
     </a>
   </li>
   <li>
-    <a href="https://youtu.be/FOItY3HnoPs" target="_blank">
+    <a href="https://youtu.be/YyyQAjEUe2o" target="_blank">
       Demo Video
     </a>
   </li>
