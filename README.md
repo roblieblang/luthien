@@ -16,6 +16,7 @@ I built a playlist conversion application for cross-platform listening between S
 </ul>
 
 ## Features
+- Allows users to convert their playlists from Spotify to YouTube, or vice versa
 - Complete integration with Spotify API and YouTube Data API
 - Robust Redis Caching strategies for expensive 3rd party API calls (such as search)
 - Responsive design
