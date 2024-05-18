@@ -1,5 +1,9 @@
 package main
 
+// This file contains the seed script for populating the database with fake user data.
+// Currently, the database is not being used, so this script is inactive. 
+// Uncomment and use this script when the database is integrated into the project.
+
 // import (
 // 	"context"
 // 	"log"

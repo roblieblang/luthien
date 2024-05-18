@@ -173,21 +173,6 @@ func(h *SpotifyHandler) GetCurrentUserPlaylistsHandler(c *gin.Context) {
 
 // Handles the retrieval of a single playlist's tracks
 func(h *SpotifyHandler) GetPlaylistTracksHandler(c *gin.Context) {
-    // defaultLimit := 20
-    // defaultOffset := 0
-
-    // limitStr := c.DefaultQuery("limit", strconv.Itoa(defaultLimit))
-    // limit, err := strconv.Atoi(limitStr)
-    // if err != nil {
-    //     limit = defaultLimit
-    // }
-
-    // offsetStr := c.DefaultQuery("offset", strconv.Itoa(defaultOffset))
-    // offset, err := strconv.Atoi(offsetStr)
-    // if err != nil {
-    //     offset = defaultOffset
-    // }
-
     userID := c.Query("userID")
     if userID == "" {
         c.JSON(http.StatusBadRequest, gin.H{"error": "userID query parameter is required"})

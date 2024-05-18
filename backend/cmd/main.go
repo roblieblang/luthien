@@ -89,12 +89,12 @@ func main() {
     }))
 
 
-    // User setup
+    // User setup (currently disabled)
     // userDAO := user.NewDAO(appCtx.MongoClient, appCtx.EnvConfig.DatabaseName, "users")
     // userService := user.NewUserService(userDAO)
     // userHandler := user.NewUserHandler(userService)
 
-    // // User data endpoints
+    // User data endpoints (currently disabled)
     // router.POST("/users", userHandler.CreateUser)
     // router.GET("/users", userHandler.GetAllUsers)
     // router.GET("/users/:id", userHandler.GetUser)
