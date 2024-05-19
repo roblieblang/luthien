@@ -17,18 +17,18 @@ import (
 // Formats responses and errors from service layer into HTTP format
 
 type SpotifyHandler struct {
-    spotifyService *SpotifyService
+    SpotifyService SpotifyServiceInterface
 }
 
-func NewSpotifyHandler(spotifyService *SpotifyService) *SpotifyHandler {
+func NewSpotifyHandler(spotifyService SpotifyServiceInterface) *SpotifyHandler {
     return &SpotifyHandler{
-        spotifyService: spotifyService,
+        SpotifyService: spotifyService,
     }
 }
 
 // Sends the session ID and redirect auth URL to the frontend
 func (h *SpotifyHandler) LoginHandler(c *gin.Context) {
-    authURL, sessionID, err := h.spotifyService.StartLoginFlow()
+    authURL, sessionID, err := h.SpotifyService.StartLoginFlow()
     if err != nil {
         c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
         return
@@ -54,7 +54,7 @@ func (h *SpotifyHandler) CallbackHandler(c *gin.Context) {
         return
     }
 
-    err := h.spotifyService.HandleCallback(req.Code, req.UserID, req.SessionID)
+    err := h.SpotifyService.HandleCallback(req.Code, req.UserID, req.SessionID)
     if err != nil {
         log.Printf("Error handling callback: %v\n", err)
         statusCode := http.StatusInternalServerError
@@ -81,7 +81,7 @@ func (h *SpotifyHandler) CheckAuthHandler(c *gin.Context) {
         return
     }
 
-    userMetadata, err := h.spotifyService.Auth0Service.GetUserMetadata(userID) 
+    userMetadata, err := h.SpotifyService.GetAuth0Service().GetUserMetadata(userID) 
     if err != nil {
         log.Printf("Error getting Auth0 user metadata: %v", err)
         c.JSON(http.StatusInternalServerError, gin.H{"error": err})
@@ -110,9 +110,9 @@ func (h *SpotifyHandler) LogoutHandler(c *gin.Context) {
     clearTokenParams := utils.ClearTokensParams{
         Party: "spotify", 
         UserID: userID,
-        AppCtx: *h.spotifyService.AppContext,
+        AppCtx: *h.SpotifyService.GetAppContext(),
     }
-    if err := utils.HandleLogout(h.spotifyService.Auth0Service, clearTokenParams); err != nil {
+    if err := utils.HandleLogout(h.SpotifyService.GetAuth0Service(), clearTokenParams); err != nil {
         c.JSON(http.StatusInternalServerError, gin.H{"error": err})
         return
     }
@@ -128,7 +128,7 @@ func (h *SpotifyHandler) GetCurrentUserProfileHandler(c *gin.Context) {
         return
     }
 
-    userProfile, err := h.spotifyService.GetCurrentUserProfile(userID) 
+    userProfile, err := h.SpotifyService.GetCurrentUserProfile(userID) 
     if err != nil {
         log.Printf("error retrieving Spotify profile: %v", err)
         if strings.Contains(err.Error(), "reauthentication required") {
@@ -158,7 +158,7 @@ func(h *SpotifyHandler) GetCurrentUserPlaylistsHandler(c *gin.Context) {
         return
     }
     
-    userPlaylists, err := h.spotifyService.GetCurrentUserPlaylists(userID, offset)
+    userPlaylists, err := h.SpotifyService.GetCurrentUserPlaylists(userID, offset)
     if err != nil {
         if strings.Contains(err.Error(), "reauthentication required") {
             c.JSON(http.StatusUnauthorized, gin.H{"error": "authentication_required", "message": "Please reauthenticate with Spotify."})
@@ -185,7 +185,7 @@ func(h *SpotifyHandler) GetPlaylistTracksHandler(c *gin.Context) {
         return
     }
     
-    playlistTracks, err := h.spotifyService.GetPlaylistTracks(userID, playlistID)
+    playlistTracks, err := h.SpotifyService.GetPlaylistTracks(userID, playlistID)
     if err != nil {
         if strings.Contains(err.Error(), "reauthentication required") {
             c.JSON(http.StatusUnauthorized, gin.H{"error": "authentication_required", "message": "Please reauthenticate with Spotify."})
@@ -206,7 +206,7 @@ func(h *SpotifyHandler) CreatePlaylistHandler(c *gin.Context) {
         return
     }
 
-    newPlaylistID, err := h.spotifyService.CreatePlaylist(playlistData.UserID, playlistData.SpotifyUserID, playlistData.Payload)
+    newPlaylistID, err := h.SpotifyService.CreatePlaylist(playlistData.UserID, playlistData.SpotifyUserID, playlistData.Payload)
     if err != nil {
         if strings.Contains(err.Error(), "reauthentication required") {
             c.JSON(http.StatusUnauthorized, gin.H{"error": "authentication_required", "message": "Please reauthenticate with Spotify."})
@@ -233,7 +233,7 @@ func(h *SpotifyHandler) AddItemsToPlaylistHandler(c *gin.Context) {
         return
     }
 
-    err := h.spotifyService.AddItemsToPlaylist(playlistItemsData.UserID, playlistItemsData.PlaylistID, playlistItemsData.Payload)
+    err := h.SpotifyService.AddItemsToPlaylist(playlistItemsData.UserID, playlistItemsData.PlaylistID, playlistItemsData.Payload)
     if err != nil {
         if strings.Contains(err.Error(), "reauthentication required") {
             c.JSON(http.StatusUnauthorized, gin.H{"error": "authentication_required", "message": "Please reauthenticate with Spotify."})
@@ -279,7 +279,7 @@ func(h *SpotifyHandler) SearchTracksUsingArtistAndTrackhandler(c *gin.Context) {
         return
     }
     
-    tracksFound, err := h.spotifyService.SearchTracksUsingArtistAndTrack(userID, artistName, trackTitle, limit, offset)
+    tracksFound, err := h.SpotifyService.SearchTracksUsingArtistAndTrack(userID, artistName, trackTitle, limit, offset)
     if err != nil {
         log.Printf("Search error: %v", err)
         if strings.Contains(err.Error(), "reauthentication required") {
@@ -313,7 +313,7 @@ func(h *SpotifyHandler) SearchTracksUsingVideoTitleHandler(c *gin.Context) {
         return
     }
     
-    tracksFound, err := h.spotifyService.SearchTracksUsingVideoTitle(userID, videoTitle)
+    tracksFound, err := h.SpotifyService.SearchTracksUsingVideoTitle(userID, videoTitle)
     if err != nil {
         log.Printf("Search error: %v", err)
         if strings.Contains(err.Error(), "reauthentication required") {
@@ -346,7 +346,7 @@ func(h *SpotifyHandler) DeletePlaylistHandler(c *gin.Context) {
         return
     }
 
-    if err := h.spotifyService.DeletePlaylist(userID, playlistID); err != nil {
+    if err := h.SpotifyService.DeletePlaylist(userID, playlistID); err != nil {
         if strings.Contains(err.Error(), "reauthentication required") {
             c.JSON(http.StatusUnauthorized, gin.H{"error": "authentication_required", "message": "Please reauthenticate with Spotify."})
             return

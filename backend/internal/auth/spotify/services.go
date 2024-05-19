@@ -18,9 +18,12 @@ import (
 
 type SpotifyService struct {
     SpotifyClient *SpotifyClient
-    Auth0Service *auth0.Auth0Service
+    Auth0Service  *auth0.Auth0Service
     AppContext    *utils.AppContext
 }
+
+// Ensure that SpotifyService implements all methods in SpotifyServiceInterface
+var _ SpotifyServiceInterface = (*SpotifyService)(nil)
 
 func NewSpotifyService(spotifyClient *SpotifyClient, auth0Service *auth0.Auth0Service, appContext *utils.AppContext) *SpotifyService {
     return &SpotifyService{
@@ -252,4 +255,12 @@ func (s *SpotifyService) DeletePlaylist(userID, playlistID string) error {
     }
 
     return s.SpotifyClient.DeletePlaylist(accessToken, playlistID)    
+}
+
+func (s *SpotifyService) GetAuth0Service() *auth0.Auth0Service {
+	return s.Auth0Service
+}
+
+func (s *SpotifyService) GetAppContext() *utils.AppContext {
+    return s.AppContext
 }
