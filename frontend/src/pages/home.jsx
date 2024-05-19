@@ -6,7 +6,6 @@ import { Link, useNavigate } from "react-router-dom";
 import "../App.css";
 import AuthenticationButton from "../components/auth0/authenticationButton";
 import Footer from "../components/general/footer";
-import BasicHeading from "../components/general/headings/basicHeading";
 import SpotifyAuthButton from "../components/spotify/spotifyAuthButton";
 import YouTubeAuthButton from "../components/youtube/youTubeAuthButton";
 import { useUser } from "../contexts/userContext";

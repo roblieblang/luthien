@@ -1,3 +1,4 @@
+import React from "react";
 import { Link } from "react-router-dom";
 
 export default function LinkButton({ to, text, onClick, state, className }) {
