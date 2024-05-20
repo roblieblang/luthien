@@ -1,13 +1,9 @@
 # Luthien
+![Homepage](https://raw.githubusercontent.com/roblieblang/luthien/main/images/homepage.png)
 
 ## Overview
 Luthien is a playlist conversion application designed to facilitate cross-platform listening between Spotify and YouTube. Users can easily transfer their playlists from one platform to another, ensuring seamless music enjoyment across different services.
 <ul>
-  <li>
-    <a href="" target="_blank">
-      Try here (awaiting verification by API providers)
-    </a>
-  </li>
   <li>
     <a href="https://youtu.be/FOItY3HnoPs" target="_blank">
       Demo Video
@@ -15,12 +11,16 @@ Luthien is a playlist conversion application designed to facilitate cross-platfo
   </li>
 </ul>
 
+![Spotify Account](https://raw.githubusercontent.com/roblieblang/luthien/main/images/spotify.png)
+
 ## Features
 - Convert playlists from Spotify to YouTube, or vice versa
 - Integration with Spotify API and YouTube Data API
 - Redis Caching strategies for optimizing 3rd party API calls
 - Responsive design for various devices
 - Authentication integrated with Auth0
+
+![Spotify Conversion](https://raw.githubusercontent.com/roblieblang/luthien/main/images/spotify-convert.png)
 
 ## Technologies Used
 ### Backend
