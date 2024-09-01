@@ -43,19 +43,12 @@ export default function Music() {
 
   const handleNext = () => {
     setPlaylistsListCurrentPage(playlistsListCurrentPage + 1);
-
-    // if (playlistSource === "youtube" && nextPageToken) {
-    //   setPageToken(nextPageToken);
-    // }
   };
 
   const handlePrevious = () => {
     if (playlistsListCurrentPage > 1) {
       setPlaylistsListCurrentPage(playlistsListCurrentPage - 1);
     }
-    // if (playlistSource === "youtube" && prevPageToken) {
-    //   setPageToken(prevPageToken);
-    // }
   };
 
   const handlePageClick = (page) => {

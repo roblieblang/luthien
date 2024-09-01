@@ -14,14 +14,14 @@ func NewRedisClient(addr, password string, db int) *redis.Client {
 
 	if os.Getenv("GIN_MODE") == "release" {
 		opt, err = redis.ParseURL(os.Getenv("REDIS_URL"))
-        if err != nil {
-            log.Fatalf("Error parsing Redis URL: %v", err)
-        }
+		if err != nil {
+			log.Fatalf("Error parsing Redis URL: %v", err)
+		}
 	} else {
 		opt = &redis.Options{
-			Addr: addr,
+			Addr:     addr,
 			Password: password,
-			DB: db, 
+			DB:       db,
 		}
 	}
 
@@ -31,6 +31,6 @@ func NewRedisClient(addr, password string, db int) *redis.Client {
 	if err != nil {
 		log.Printf("Failed to connect to Redis: %v", err)
 	}
-	
+
 	return client
 }

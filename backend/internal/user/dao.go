@@ -25,9 +25,9 @@ func (dao *DAO) CreateUser(user *User) error {
 func (dao *DAO) GetUser(id string) (*User, error) {
 	var user User
 	objID, err := primitive.ObjectIDFromHex(id)
-    if err != nil {
-        return nil, err
-    }
+	if err != nil {
+		return nil, err
+	}
 	filter := bson.M{"_id": objID}
 	err = dao.collection.FindOne(context.TODO(), filter).Decode(&user)
 	if err != nil {
@@ -36,7 +36,7 @@ func (dao *DAO) GetUser(id string) (*User, error) {
 	return &user, nil
 }
 
-func (dao *DAO) GetAllUsers() ([]User,error) {
+func (dao *DAO) GetAllUsers() ([]User, error) {
 	var users []User
 	cursor, err := dao.collection.Find(context.TODO(), bson.D{{}})
 	if err != nil {

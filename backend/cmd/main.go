@@ -1,7 +1,6 @@
 package main
 
 import (
-	// "context"
 	"log"
 	"os"
 	"strings"
@@ -15,9 +14,7 @@ import (
 	"github.com/roblieblang/luthien/backend/internal/auth/youtube"
 	"github.com/roblieblang/luthien/backend/internal/config"
 
-	// "github.com/roblieblang/luthien/backend/internal/user"
 	"github.com/roblieblang/luthien/backend/internal/utils"
-	// "gopkg.in/natefinch/lumberjack.v2"
 )
 
 func LoggerMiddleware() gin.HandlerFunc {
@@ -32,133 +29,105 @@ func LoggerMiddleware() gin.HandlerFunc {
 }
 
 func main() {
-    // log.SetOutput(&lumberjack.Logger{
-	// 	Filename:   "./logs/server.log",
-	// 	MaxSize:    10, // megabytes
-	// 	MaxBackups: 3,
-	// 	MaxAge:     7, // days
-	// 	Compress:   true, // compress rolled back files
-	// })
+	envConfig := utils.LoadENV()
 
-    envConfig := utils.LoadENV()
+	redisClient := config.NewRedisClient(envConfig.RedisAddr, "", 0)
 
-    redisClient := config.NewRedisClient(envConfig.RedisAddr, "", 0)
+	appCtx := &utils.AppContext{
+		EnvConfig:   envConfig,
+		RedisClient: redisClient,
+	}
 
-    // mongoClient:= config.DBConnect(envConfig.MongoURI)
-    // defer func() {
-    //     if err := mongoClient.Disconnect(context.Background()); err != nil {
-    //         log.Fatalf("Failed to disconnect MongoDB client: %v", err)
-    //     }
-    // }()
+	router := gin.Default()
 
-    appCtx := &utils.AppContext{
-        EnvConfig:   envConfig,
-        RedisClient: redisClient,
-        // MongoClient: mongoClient,
-    }
+	router.Use(LoggerMiddleware())
 
-    router := gin.Default()
+	deployedServerURL := os.Getenv("DEPLOYED_SERVER_URL")
+	deployedUIURL := os.Getenv("DEPLOYED_UI_URL")
 
-    router.Use(LoggerMiddleware())
+	if deployedServerURL == "" || !strings.HasPrefix(deployedServerURL, "http") {
+		log.Println("DEPLOYED_SERVER_URL is not set or invalid. CORS configuration for this origin will be skipped.")
+		deployedServerURL = ""
+	}
+	if deployedUIURL == "" || !strings.HasPrefix(deployedUIURL, "http") {
+		log.Println("DEPLOYED_UI_URL is not set or invalid. CORS configuration for this origin will be skipped.")
+		deployedUIURL = ""
+	}
 
-    deployedServerURL := os.Getenv("DEPLOYED_SERVER_URL")
-    deployedUIURL := os.Getenv("DEPLOYED_UI_URL")
+	validOrigins := []string{"http://localhost:8080", "http://localhost:5173"}
+	if deployedServerURL != "" {
+		validOrigins = append(validOrigins, deployedServerURL)
+	}
+	if deployedUIURL != "" {
+		validOrigins = append(validOrigins, deployedUIURL)
+	}
 
-    if deployedServerURL == "" || !strings.HasPrefix(deployedServerURL, "http") {
-        log.Println("DEPLOYED_SERVER_URL is not set or invalid. CORS configuration for this origin will be skipped.")
-        deployedServerURL = ""
-    }
-    if deployedUIURL == "" || !strings.HasPrefix(deployedUIURL, "http") {
-        log.Println("DEPLOYED_UI_URL is not set or invalid. CORS configuration for this origin will be skipped.")
-        deployedUIURL = ""
-    }
+	router.Use(cors.New(cors.Config{
+		AllowOrigins:     validOrigins,
+		AllowMethods:     []string{"GET", "POST", "DELETE", "PATCH"},
+		AllowHeaders:     []string{"Content-Type", "Authorization"},
+		AllowCredentials: true,
+	}))
 
-    validOrigins := []string{"http://localhost:8080", "http://localhost:5173"}
-    if deployedServerURL != "" {
-        validOrigins = append(validOrigins, deployedServerURL)
-    }
-    if deployedUIURL != "" {
-        validOrigins = append(validOrigins, deployedUIURL)
-    }
+	// Auth0 setup
+	auth0Client := auth0.NewAuth0Client(appCtx)
+	auth0Service := auth0.NewAuth0Service(auth0Client, appCtx)
 
-    router.Use(cors.New(cors.Config{
-        AllowOrigins:     validOrigins,
-        AllowMethods:     []string{"GET", "POST", "DELETE", "PATCH"},
-        AllowHeaders:     []string{"Content-Type", "Authorization"},
-        AllowCredentials: true,
-    }))
+	// Spotify setup
+	spotifyClient := spotify.NewSpotifyClient(appCtx)
+	spotifyService := spotify.NewSpotifyService(spotifyClient, auth0Service, appCtx)
+	spotifyHandler := spotify.NewSpotifyHandler(spotifyService)
 
+	// Spotify authentication endpoints
+	router.GET("/auth/spotify/login", spotifyHandler.LoginHandler)
+	router.POST("/auth/spotify/callback", spotifyHandler.CallbackHandler)
+	router.POST("/auth/spotify/logout", spotifyHandler.LogoutHandler)
+	router.GET("/auth/spotify/check-auth", spotifyHandler.CheckAuthHandler)
 
-    // User setup (currently disabled)
-    // userDAO := user.NewDAO(appCtx.MongoClient, appCtx.EnvConfig.DatabaseName, "users")
-    // userService := user.NewUserService(userDAO)
-    // userHandler := user.NewUserHandler(userService)
+	// Spotify user data endpoints
+	router.GET("/spotify/current-profile", spotifyHandler.GetCurrentUserProfileHandler)
+	router.GET("/spotify/current-user-playlists", spotifyHandler.GetCurrentUserPlaylistsHandler)
+	router.GET("/spotify/playlist-tracks", spotifyHandler.GetPlaylistTracksHandler)
+	router.POST("/spotify/create-playlist", spotifyHandler.CreatePlaylistHandler)
+	router.POST("/spotify/add-items-to-playlist", spotifyHandler.AddItemsToPlaylistHandler)
+	router.GET("/spotify/search-for-track", spotifyHandler.SearchTracksUsingArtistAndTrackhandler)
+	router.GET("/spotify/search-using-video", spotifyHandler.SearchTracksUsingVideoTitleHandler)
+	router.DELETE("/spotify/delete-playlist", spotifyHandler.DeletePlaylistHandler)
 
-    // User data endpoints (currently disabled)
-    // router.POST("/users", userHandler.CreateUser)
-    // router.GET("/users", userHandler.GetAllUsers)
-    // router.GET("/users/:id", userHandler.GetUser)
+	// YouTube setup
+	youTubeClient := youtube.NewYouTubeClient(appCtx)
+	youTubeService := youtube.NewYouTubeService(youTubeClient, auth0Service)
+	youTubeHandler := youtube.NewYouTubeHandler(youTubeService)
 
-    // Auth0 setup
-    auth0Client := auth0.NewAuth0Client(appCtx)
-    auth0Service := auth0.NewAuth0Service(auth0Client, appCtx)
+	// Google authentication endpoints
+	router.GET("/auth/google/login", youTubeHandler.LoginHandler)
+	router.POST("/auth/google/callback", youTubeHandler.CallbackHandler)
+	router.POST("/auth/google/logout", youTubeHandler.LogoutHandler)
+	router.GET("/auth/google/check-auth", youTubeHandler.CheckAuthHandler)
 
-    // Spotify setup
-    spotifyClient := spotify.NewSpotifyClient(appCtx)
-    spotifyService := spotify.NewSpotifyService(spotifyClient, auth0Service, appCtx)
-    spotifyHandler := spotify.NewSpotifyHandler(spotifyService)
+	// YouTube data endpoints
+	router.GET("/youtube/current-user-playlists", youTubeHandler.GetCurrentUserPlaylistsHandler)
+	router.GET("/youtube/playlist-tracks", youTubeHandler.GetPlaylistItemsHandler)
+	router.POST("/youtube/create-playlist", youTubeHandler.CreatePlaylistHandler)
+	router.POST("/youtube/add-items-to-playlist", youTubeHandler.AddItemsToPlaylistHandler)
+	router.GET("/youtube/search-for-video", youTubeHandler.SearchVideosHandler)
+	router.DELETE("/youtube/delete-playlist", youTubeHandler.DeletePlaylistHandler)
 
-    // Spotify authentication endpoints
-    router.GET("/auth/spotify/login", spotifyHandler.LoginHandler)
-    router.POST("/auth/spotify/callback", spotifyHandler.CallbackHandler)
-    router.POST("/auth/spotify/logout", spotifyHandler.LogoutHandler)
-    router.GET("/auth/spotify/check-auth", spotifyHandler.CheckAuthHandler)
+	// OpenAI setup
+	openAIClient := openai.NewOpenAIClient(appCtx)
+	openAIService := openai.NewOpenAIService(openAIClient)
+	openAIHandler := openai.NewOpenAIHandler(openAIService)
 
-    // Spotify user data endpoints
-    router.GET("/spotify/current-profile", spotifyHandler.GetCurrentUserProfileHandler)
-    router.GET("/spotify/current-user-playlists", spotifyHandler.GetCurrentUserPlaylistsHandler)
-    router.GET("/spotify/playlist-tracks", spotifyHandler.GetPlaylistTracksHandler)
-    router.POST("/spotify/create-playlist", spotifyHandler.CreatePlaylistHandler)
-    router.POST("/spotify/add-items-to-playlist", spotifyHandler.AddItemsToPlaylistHandler)
-    router.GET("/spotify/search-for-track", spotifyHandler.SearchTracksUsingArtistAndTrackhandler)
-    router.GET("/spotify/search-using-video", spotifyHandler.SearchTracksUsingVideoTitleHandler)
-    router.DELETE("/spotify/delete-playlist", spotifyHandler.DeletePlaylistHandler)
+	// OpenAI endpoints
+	router.POST("/auth/openai/extract-artist-song", openAIHandler.ExtractArtistAndSongFromVideoTitleHandler)
 
-    // YouTube setup
-    youTubeClient := youtube.NewYouTubeClient(appCtx)
-    youTubeService := youtube.NewYouTubeService(youTubeClient, auth0Service)
-    youTubeHandler := youtube.NewYouTubeHandler(youTubeService)
+	router.GET("/", func(c *gin.Context) {
+		c.JSON(200, gin.H{
+			"message": "Welcome to the server!",
+		})
+	})
 
-    // Google authentication endpoints
-    router.GET("/auth/google/login", youTubeHandler.LoginHandler)
-    router.POST("/auth/google/callback", youTubeHandler.CallbackHandler)
-    router.POST("/auth/google/logout", youTubeHandler.LogoutHandler)
-    router.GET("/auth/google/check-auth", youTubeHandler.CheckAuthHandler)
-
-    // YouTube data endpoints
-    router.GET("/youtube/current-user-playlists", youTubeHandler.GetCurrentUserPlaylistsHandler)
-    router.GET("/youtube/playlist-tracks", youTubeHandler.GetPlaylistItemsHandler)
-    router.POST("/youtube/create-playlist", youTubeHandler.CreatePlaylistHandler)
-    router.POST("/youtube/add-items-to-playlist", youTubeHandler.AddItemsToPlaylistHandler)
-    router.GET("/youtube/search-for-video", youTubeHandler.SearchVideosHandler)
-    router.DELETE("/youtube/delete-playlist", youTubeHandler.DeletePlaylistHandler)
-
-    // OpenAI setup
-    openAIClient := openai.NewOpenAIClient(appCtx)
-    openAIService := openai.NewOpenAIService(openAIClient)
-    openAIHandler := openai.NewOpenAIHandler(openAIService)
-
-    // OpenAI endpoints
-    router.POST("/auth/openai/extract-artist-song", openAIHandler.ExtractArtistAndSongFromVideoTitleHandler)
-
-
-    router.GET("/", func(c *gin.Context) {
-        c.JSON(200, gin.H{
-            "message": "Welcome to the server!",
-        })
-    })
-
-    port := os.Getenv("PORT")
+	port := os.Getenv("PORT")
 	if err := router.Run(":" + port); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}

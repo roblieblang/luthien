@@ -27,7 +27,6 @@ func setupRouter(handler *spotify.SpotifyHandler) *gin.Engine {
 	return router
 }
 
-
 func TestSpotifyLoginHandler(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	handler := NewTestSpotifyHandler()
@@ -89,18 +88,18 @@ func TestSpotifyGetCurrentUserProfileHandler(t *testing.T) {
 
 		mockSpotifyService := handler.SpotifyService.(*MockSpotifyService)
 		expectedProfile := spotify.SpotifyUserProfile{
-			Country:        "",
-			DisplayName:    "Mock User",
-			Email:          "",
+			Country:         "",
+			DisplayName:     "Mock User",
+			Email:           "",
 			ExplicitContent: spotify.ExplicitContent{FilterEnabled: false, FilterLocked: false},
-			ExternalUrls:   spotify.ExternalUrls{Spotify: ""},
-			Followers:      spotify.Followers{Href: "", Total: 0},
-			Href:           "",
-			ID:             "user123",
-			Images:         nil,
-			Product:        "",
-			Type:           "",
-			URI:            "",
+			ExternalUrls:    spotify.ExternalUrls{Spotify: ""},
+			Followers:       spotify.Followers{Href: "", Total: 0},
+			Href:            "",
+			ID:              "user123",
+			Images:          nil,
+			Product:         "",
+			Type:            "",
+			URI:             "",
 		}
 		mockSpotifyService.On("GetCurrentUserProfile", "user123").Return(expectedProfile, nil)
 
@@ -146,8 +145,6 @@ func TestSpotifyGetCurrentUserProfileHandler(t *testing.T) {
 		assert.JSONEq(t, `{"error": "userID query parameter is required"}`, w.Body.String())
 	})
 }
-
-
 
 func TestSpotifySearchTracksUsingArtistAndTrackHandler(t *testing.T) {
 	gin.SetMode(gin.TestMode)

@@ -12,21 +12,21 @@ import (
 )
 
 type OpenAIClient struct {
-    AppContext *utils.AppContext
+	AppContext *utils.AppContext
 }
 
 func NewOpenAIClient(appCtx *utils.AppContext) *OpenAIClient {
-    return &OpenAIClient{
-        AppContext: appCtx,
-    }
+	return &OpenAIClient{
+		AppContext: appCtx,
+	}
 }
 
 type ArtistSongPair struct {
-    ArtistName string `json:"artistName"`
-    SongTitle  string `json:"songTitle"`
+	ArtistName string `json:"artistName"`
+	SongTitle  string `json:"songTitle"`
 }
 
-// TODO: handle token limits and API quotas 
+// TODO: handle token limits and API quotas
 // See https://github.com/pkoukk/tiktoken-go#counting-tokens-for-chat-api-calls for token counting
 
 // Prompts the OpenAI API with a list of video titles from which it will extract artist names and song titles
@@ -59,11 +59,11 @@ func (c *OpenAIClient) ExtractArtistAndSongFromVideoTitle(videoTitles []string) 
 	resp, err := client.CreateChatCompletion(
 		context.Background(),
 		openai.ChatCompletionRequest{
-			Model: openai.GPT3Dot5Turbo,
+			Model:       openai.GPT3Dot5Turbo,
 			Temperature: math.SmallestNonzeroFloat32,
 			Messages: []openai.ChatCompletionMessage{
 				{
-					Role: openai.ChatMessageRoleUser,
+					Role:    openai.ChatMessageRoleUser,
 					Content: prompt,
 				},
 			},
@@ -85,4 +85,4 @@ func (c *OpenAIClient) ExtractArtistAndSongFromVideoTitle(videoTitles []string) 
 		return nil, fmt.Errorf("error parsing OpenAI response into struct: %v", err)
 	}
 	return artistSongPairs, nil
-} 
+}

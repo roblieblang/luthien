@@ -19,23 +19,23 @@ func NewOpenAIHandler(openAIService *OpenAIService) *OpenAIHandler {
 }
 
 type ExtractArtistAndSongBody struct {
-    VideoTitles []string `json:"videoTitles"`
+	VideoTitles []string `json:"videoTitles"`
 }
 
 func (h *OpenAIHandler) ExtractArtistAndSongFromVideoTitleHandler(c *gin.Context) {
-    var requestBody ExtractArtistAndSongBody
-    log.Printf("OpenAI extraction request body: %v", requestBody)
-    if err := c.BindJSON(&requestBody); err != nil {
-        c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
-        return
-    }
+	var requestBody ExtractArtistAndSongBody
+	log.Printf("OpenAI extraction request body: %v", requestBody)
+	if err := c.BindJSON(&requestBody); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
+		return
+	}
 
-    resp, err := h.openAIService.ExtractArtistAndSongFromVideoTitle(requestBody.VideoTitles)
-    if err != nil {
-        log.Printf("Error extracting artist and song: %v", err)
-        c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("error extracting artist and song title: %v", err)})
-        return
-    }
+	resp, err := h.openAIService.ExtractArtistAndSongFromVideoTitle(requestBody.VideoTitles)
+	if err != nil {
+		log.Printf("Error extracting artist and song: %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("error extracting artist and song title: %v", err)})
+		return
+	}
 
-    c.JSON(http.StatusOK, gin.H{"message": "Successfully extracted artist and song from video title", "result": resp})
+	c.JSON(http.StatusOK, gin.H{"message": "Successfully extracted artist and song from video title", "result": resp})
 }
