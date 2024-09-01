@@ -43,7 +43,7 @@ Luthien is a playlist conversion application designed to facilitate cross-platfo
 ![Homepage](https://raw.githubusercontent.com/roblieblang/luthien/main/images/homepage.png)
 ![Spotify Account](https://raw.githubusercontent.com/roblieblang/luthien/main/images/spotify.png)
 ![Spotify Conversion](https://raw.githubusercontent.com/roblieblang/luthien/main/images/spotify-convert.png)
-![Conversion Success]([https://](https://raw.githubusercontent.com/roblieblang/luthien/main/images/youtube-track-hits.png))
+![Conversion Success](https://raw.githubusercontent.com/roblieblang/luthien/main/images/youtube-track-hits.png)
 
 ## ⚙️ Technologies Used
 
